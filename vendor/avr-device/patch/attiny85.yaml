@@ -1,0 +1,137 @@
+_svd: ../svd/attiny85.svd
+
+_include:
+  - "common/ac.yaml"
+  - "common/eeprom.yaml"
+  - "common/wdt.yaml"
+
+  - "common/tiny/exint.yaml"
+  - "common/tiny/usi.yaml"
+
+  - "timer/attiny85.yaml"
+
+AC:
+  _modify:
+    DIDR0:
+      description: "Digital Input Disable Register 0"
+ADC:
+  _modify:
+    ADCSRA:
+      description: "ADC Control and Status Register A"
+  ADCSRA:
+    ADPS:
+      _replace_enum:
+        PRESCALER_2: [1, "Prescaler Value 2"]
+        PRESCALER_4: [2, "Prescaler Value 4"]
+        PRESCALER_8: [3, "Prescaler Value 8"]
+        PRESCALER_16: [4, "Prescaler Value 16"]
+        PRESCALER_32: [5, "Prescaler Value 32"]
+        PRESCALER_64: [6, "Prescaler Value 64"]
+        PRESCALER_128: [7, "Prescaler Value 128"]
+  ADCSRB:
+    ADTS:
+      _replace_enum:
+        FREE: [0, "Free Running mode"]
+        AC: [1, "Analog Comparator"]
+        INT0: [2, "External Interrupt Request 0"]
+        TC0_CMA: [3, "Timer/Counter0 Compare Match A"]
+        TC0_OVF: [4, "Timer/Counter0 Overflow"]
+        TC0_CMB: [5, "Timer/Counter0 Compare Match B"]
+        PCIR: [6, "Pin Change Interrupt Request"]
+  ADMUX:
+    _modify:
+      MUX:
+        _write_constraint: enum
+      REFS:
+        _write_constraint: enum
+    MUX:
+      _replace_enum:
+        ADC0: [0, "Single-ended Input ADC0"]
+        ADC1: [1, "Single-ended Input ADC1"]
+        ADC2: [2, "Single-ended Input ADC2"]
+        ADC3: [3, "Single-ended Input ADC3"]
+        ADC2_ADC2_1X: [4, "Differential Inputs Positive ADC2 Negative ADC2 1x Gain"]
+        ADC2_ADC2_20X: [5, "Differential Inputs Positive ADC2 Negative ADC2 20x Gain"]
+        ADC2_ADC3_1X: [6, "Differential Inputs Positive ADC2 Negative ADC3 1x Gain"]
+        ADC2_ADC3_20X: [7, "Differential Inputs Positive ADC2 Negative ADC3 20x Gain"]
+        ADC0_ADC0_1X: [8, "Differential Inputs Positive ADC0 Negative ADC0 1x Gain"]
+        ADC0_ADC0_20X: [9, "Differential Inputs Positive ADC0 Negative ADC0 20x Gain"]
+        ADC0_ADC1_1X: [10, "Differential Inputs Positive ADC0 Negative ADC1 1x Gain"]
+        ADC0_ADC1_20X: [11, "Differential Inputs Positive ADC0 Negative ADC1 20x Gain"]
+        ADC_VBG: [12, "Internal Reference (VBG)"]
+        ADC_GND: [13, "0V (GND)"]
+        TEMPSENS: [15, "Temperature sensor"]
+    REFS:
+      _replace_enum:
+        VCC: [0, "Vcc used as Voltage Reference, disconnected from Aref"]
+        AREF: [1, "External Voltage Reference at AREF pin, Internal Voltage Reference turned off"]
+        INTERNAL: [2, "Internal Voltage Reference (1.1V when REFS2 is cleared, 2.56V when REFS2 is set) without external bypass"]
+        INTERNAL_BYPASS: [3, "Internal 2.56V Voltage Reference with external bypass capacitor at AREF pin (REFS2 must be set)"]
+CPU:
+  CLKPR:
+    CLKPS:
+      _replace_enum:
+        PRESCALER_1: [0, "Prescaler Value 1"]
+        PRESCALER_2: [1, "Prescaler Value 2"]
+        PRESCALER_4: [2, "Prescaler Value 4"]
+        PRESCALER_8: [3, "Prescaler Value 8"]
+        PRESCALER_16: [4, "Prescaler Value 16"]
+        PRESCALER_32: [5, "Prescaler Value 32"]
+        PRESCALER_64: [6, "Prescaler Value 64"]
+        PRESCALER_128: [7, "Prescaler Value 128"]
+        PRESCALER_256: [8, "Prescaler Value 256"]
+  MCUCR:
+    _delete:
+      ISC?:
+    _add:
+      BODS:
+        description: "BOD Sleep (available on some devices)"
+        bitOffset: 7
+        bitWidth: 1
+        access: read-write
+      BODSE:
+        description: "BOD Sleep Enable (available on some devices)"
+        bitOffset: 2
+        bitWidth: 1
+        access: read-write
+  PLLCSR:
+    _modify:
+      PLOCK:
+        access: read-only
+EXINT:
+  # This doesn't work:
+  # _modify:
+  #   PCMSK:
+  #     _write_constraint: [0, 63]
+  PCMSK:
+    _add:
+      PCINT0:
+        description: Enable pin change interrupt on pin 0
+        bitOffset: 0
+        bitWidth: 1
+        access: read-write
+      PCINT1:
+        description: Enable pin change interrupt on pin 1
+        bitOffset: 1
+        bitWidth: 1
+        access: read-write
+      PCINT2:
+        description: Enable pin change interrupt on pin 2
+        bitOffset: 2
+        bitWidth: 1
+        access: read-write
+      PCINT3:
+        description: Enable pin change interrupt on pin 3
+        bitOffset: 3
+        bitWidth: 1
+        access: read-write
+      PCINT4:
+        description: Enable pin change interrupt on pin 4
+        bitOffset: 4
+        bitWidth: 1
+        access: read-write
+      PCINT5:
+        description: Enable pin change interrupt on pin 5
+        bitOffset: 5
+        bitWidth: 1
+        access: read-write

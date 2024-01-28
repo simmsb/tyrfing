@@ -1,0 +1,74 @@
+https://www.radiolocman.com/shem/schematics.html?di=148255
+https://jared.geek.nz/2013/feb/linear-led-pwm
+
+Fusebits:
+
+00 00 02 FF 00 F6 04 00 00
+WDTCFG = 0
+BODCFG = 0
+OSCCFG = 0x02   FREQSEL = 20MHz
+reserved = 0xFF
+TCD0CFG = 0
+SYSCFG0 = 0xF6  No CRC, rstpin = UPDI, EEPROM erased during chip erase
+SYSCFG1 = 0x04  Startup time = 8ms
+APPEND = 0
+BOOTEND = 0
+
+pymcuprog -d attiny817 -t uart -u /dev/ttyUSB0 write -m fuses -o 0 -l 0x00 0x00 0x02 0xFF 0x00 0xF6 0x04 0x00 0x00
+
+
+Change fuses:
+BOOTEND = (0x2000 - 512) / 256  = 0x1e
+APPEND  = (0x2000 - 256) / 256  = 0x1f
+
+pymcuprog -d attiny817 -t uart -u /dev/ttyUSB0 write -m fuses -o 0 -l 0x00 0x00 0x02 0xFF 0x00 0xF7 0x04 0x1e 0x1f
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// static USART: Mutex<RefCell<Option<MySerial>>>
+//     = Mutex::new(RefCell::new(None));
+
+// struct MySerial(USART0);
+
+// impl ufmt::uWrite for MySerial {
+//     type Error = ();
+
+//     fn write_str(&mut self, s: &str) -> Result<(), Self::Error> {
+//         for b in s.as_bytes().iter() {
+//             while self.0.status.read().dreif().bit_is_clear() {}
+//             self.0.txdatal.write(|w| w.data().bits(*b))
+//         }
+//         Ok(())
+//     }
+// }
+
+// macro_rules! serial_println {
+//     ($($arg:tt)*) => {
+//         ::avr_device::interrupt::free(|cs| {
+//             if let Some(serial) = &mut *USART.borrow(cs).borrow_mut() {
+//                 ::ufmt::uwriteln!(serial, $($arg)*)
+//             } else {
+//                 Ok(())
+//             }
+//         }).unwrap()
+//     }
+// }

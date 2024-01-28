@@ -1,0 +1,5 @@
+name: ROOT
+title: Embassy
+version: dev
+nav:
+  - modules/ROOT/nav.adoc

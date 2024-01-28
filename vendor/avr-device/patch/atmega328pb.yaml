@@ -1,0 +1,64 @@
+_svd: ../svd/atmega328pb.svd
+
+# Remove index suffix from all registers and fields
+SPI0:
+  _strip_end:
+    - "0"
+SPI1:
+  _strip_end:
+    - "1"
+  SPSR:
+    _strip_end:
+      - "1"
+  SPCR:
+    _strip_end:
+      - "1"
+
+# Remove index suffix from all registers and fields
+TWI0:
+  _strip_end:
+    - "0"
+TWI1:
+  _strip_end:
+    - "1"
+  TWCR:
+    _strip_end:
+      - "1"
+  TWSR:
+    _strip_end:
+      - "1"
+
+# the svd has a register called ACSRA with no fields that
+# messes up the patch when using `common/ac.yaml`, so the
+# ac has to be patched here instead.
+AC:
+  ACSR:
+    _modify:
+      ACIS:
+        description: "Analog Comparator Interrupt Mode Select"
+      ACO:
+        access: read-only
+    ACIS:
+      _replace_enum:
+        ON_TOGGLE: [0, "Interrupt on Toggle"]
+        # Leaving [1, 'Reserved'] out
+        ON_FALLING_EDGE: [2, "Interrupt on Falling Edge"]
+        ON_RISING_EDGE: [3, "Interrupt on Rising Edge"]
+
+_include:
+  - "common/adc.yaml"
+  - "common/usart.yaml"
+  - "common/spi.yaml"
+  - "common/twi.yaml"
+  - "common/wdt.yaml"
+
+  - "timer/atmega328pb.yaml"
+
+EXINT:
+  EIMSK:
+    _modify:
+      INT:
+        description: External Interrupt Request Enable
+    _split: [INT]
+
+

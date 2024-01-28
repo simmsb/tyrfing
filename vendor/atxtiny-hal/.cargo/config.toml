@@ -1,0 +1,11 @@
+[build]
+target = "avr-attiny1616.json"
+
+[unstable]
+# with normal panics
+# build-std = ["core"]
+# build-std-features = ["compiler-builtins-mangled-names"]
+
+# MUCH smaller, no panic messages
+build-std = ["core", "panic_abort"]
+build-std-features = ["compiler-builtins-mangled-names", "panic_immediate_abort"]

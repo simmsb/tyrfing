@@ -1,0 +1,51 @@
+[package]
+name = "embassy-avr-test"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["time_u32"]
+time_u32 = []
+
+[dependencies]
+avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-section-impl"] }
+
+# embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["nightly", "arch-avr", "executor-thread" ]  }
+# embassy-time = { git = "https://github.com/embassy-rs/embassy", version = "0.3.0" }
+# embassy-time-driver = { git = "https://github.com/embassy-rs/embassy", version = "0.1.0", features = ["tick-hz-250"] }
+# embassy-time-queue-driver = { version = "0.1.0", git = "https://github.com/embassy-rs/embassy" }
+
+embassy-executor = { features = ["nightly", "arch-avr", "executor-thread" ], path = "vendor/embassy/embassy-executor" }
+embassy-time = { version = "0.3.0", path = "vendor/embassy/embassy-time" }
+embassy-time-driver = { version = "0.1.0", features = ["tick-hz-32"], path = "vendor/embassy/embassy-time-driver" }
+embassy-time-queue-driver = { version = "0.1.0", path = "vendor/embassy/embassy-time-queue-driver" }
+embassy-sync = { path = "vendor/embassy/embassy-sync" }
+
+env_int = "0.1.0"
+futures-util = { version = "0.3.30", default-features = false, features = ["portable-atomic"] }
+portable-atomic = "1.6.0"
+atxtiny-hal = "*"
+fugit = { version = "0.3.7", default-features = false }
+
+[dependencies.avr-hal-generic]
+git = "https://github.com/rahix/avr-hal.git"
+
+[patch.crates-io]
+avr-device = { path = "vendor/avr-device" }
+atxtiny-hal = { path = "vendor/atxtiny-hal" }
+
+# Configure the build for minimal size - AVRs have very little program memory
+[profile.dev]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+
+[profile.release]
+debug = true
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"

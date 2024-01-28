@@ -1,0 +1,19 @@
+# Patches for the Analog Comparator
+#
+# - Make the control-register actually writable
+# - Fix the description of the "Interrupt Mode Select" field
+# - Make just the Output field of ACSR read-only
+# - Fix the "Interrupt Mode Select" enumerated values
+AC:
+  ACSR,ACSR?A,ACSRA:
+    _modify:
+      ACIS,ACIS?:
+        description: "Analog Comparator Interrupt Mode Select"
+      ACO:
+        access: read-only
+    ACIS,ACIS?:
+      _replace_enum:
+        ON_TOGGLE: [0, "Interrupt on Toggle"]
+        # Leaving [1, 'Reserved'] out
+        ON_FALLING_EDGE: [2, "Interrupt on Falling Edge"]
+        ON_RISING_EDGE: [3, "Interrupt on Rising Edge"]
