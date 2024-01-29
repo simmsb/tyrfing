@@ -2,7 +2,7 @@
 
 use core::arch::asm;
 
-use crate::pac::{SLPCTRL, slpctrl};
+use crate::pac::{slpctrl, SLPCTRL};
 
 /// Extension trait that constrains the [`SLPCTRL`] peripheral
 pub trait SlpctrlExt {
@@ -66,6 +66,16 @@ impl From<SleepMode> for slpctrl::ctrla::SMODE_A {
             SleepMode::Idle => slpctrl::ctrla::SMODE_A::IDLE,
             SleepMode::Standby => slpctrl::ctrla::SMODE_A::STANDBY,
             SleepMode::PowerDown => slpctrl::ctrla::SMODE_A::PDOWN,
+        }
+    }
+}
+
+impl From<slpctrl::ctrla::SMODE_A> for SleepMode {
+    fn from(value: slpctrl::ctrla::SMODE_A) -> Self {
+        match value {
+            slpctrl::ctrla::SMODE_A::IDLE => SleepMode::Idle,
+            slpctrl::ctrla::SMODE_A::STANDBY => SleepMode::Standby,
+            slpctrl::ctrla::SMODE_A::PDOWN => SleepMode::PowerDown,
         }
     }
 }

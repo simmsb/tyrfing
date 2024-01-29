@@ -3,11 +3,10 @@ use atxtiny_hal::{
     embedded_hal::digital::OutputPin,
     gpio::{Output, Pin, Portc, Stateful},
     timer::{
-        tcb::{self, TCBClockSource},
-        Counter,
+        rtc::{Pit, RTCClockSource}, tcb::{self, TCBClockSource}, Counter
     },
 };
-use avr_device::attiny1616::TCB0;
+use avr_device::attiny1616::{rtc::pitctrla::PERIOD_A, RTC};
 /// embassy_time implementation for avr
 ///
 /// configure using feature flags
@@ -237,22 +236,19 @@ impl TimerQueue for AvrTc0EmbassyTimeDriver {
 }
 
 #[avr_device::interrupt(attiny1616)]
-unsafe fn TCB0_INT() {
-    __tcb0_top()
+unsafe fn RTC_PIT() {
+    handle_tick()
 }
 
-// const CLOCK: u64 = 10_000_000;
-const CLOCK: u32 = 32_000;
-
 struct InterruptState {
-    pub counter: Counter<TCB0, CLOCK>,
+    pub counter: Pit,
     pub led: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, Output<Stateful>>>,
 }
 
 static mut INTERRUPT_STATE: MaybeUninit<InterruptState> = MaybeUninit::uninit();
 
 #[inline(always)]
-pub unsafe fn __tcb0_top() {
+pub unsafe fn handle_tick() {
     let state = unsafe { &mut *INTERRUPT_STATE.as_mut_ptr() };
     let _ = state.led.as_mut().map(|p| p.set_low());
     let (should_process_timers, should_process_wake, ticks_elapsed) =
@@ -276,13 +272,12 @@ pub unsafe fn __tcb0_top() {
         timer_queue::mark_finished(t);
         wake_queue::mark_finished(t);
     });
-    state.counter.clear_event(tcb::Event::CaptureCompare);
+    state.counter.clear_interrupt();
     let _ = state.led.as_mut().map(|p| p.set_high());
 }
 
 pub fn init_system_time(
-    tc: TCB0,
-    clocks: Clocks,
+    tc: RTC,
     p: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, Output<Stateful>>>,
 ) {
     unsafe {
@@ -290,14 +285,11 @@ pub fn init_system_time(
         avr_device::interrupt::free(|_| {
             TICKS_ELAPSED = 0;
 
-            let timer =
-                atxtiny_hal::timer::FTimer::<_, CLOCK>::new(tc, TCBClockSource::Peripheral(clocks))
-                    .unwrap();
-            let mut c = timer.counter();
-            c.enable_interrupt(tcb::Interrupt::CaptureCompare);
-            c.start(TimerDurationU32::Hz(32)).unwrap();
+            let mut pit = Pit::from_rtc(tc, RTCClockSource::OSCULP32K_1K, PERIOD_A::CYC32);
+            pit.enable_interrupt();
+            pit.start();
 
-            INTERRUPT_STATE = MaybeUninit::new(InterruptState { counter: c, led: p });
+            INTERRUPT_STATE = MaybeUninit::new(InterruptState { counter: pit, led: p });
         });
     }
 }

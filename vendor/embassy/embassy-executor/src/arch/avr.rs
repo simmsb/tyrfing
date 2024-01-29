@@ -60,7 +60,10 @@ mod thread {
                     avr_device::interrupt::disable();
                     if !SIGNAL_WORK_THREAD_MODE.swap(false, Ordering::SeqCst) {
                         avr_device::interrupt::enable();
-                        avr_device::asm::sleep();
+                        extern "Rust" {
+                            fn __sleep();
+                        }
+                        __sleep();
                     } else {
                         avr_device::interrupt::enable();
                         self.inner.poll();
