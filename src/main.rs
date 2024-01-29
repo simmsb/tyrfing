@@ -13,6 +13,7 @@ use atxtiny_hal::pac;
 use atxtiny_hal::prelude::*;
 use atxtiny_hal::vref::ReferenceVoltage;
 use atxtiny_hal::vref::VrefExt;
+use atxtiny_hal::watchdog::WatchdogTimer;
 use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
 
 pub mod gpio;
@@ -28,6 +29,15 @@ async fn lol(mut t: gpio::Pin<Input>, p: atxtiny_hal::gpio::PC0<Input>) {
         t.wait(Edge::Rising).await;
         p.toggle().unwrap_infallible();
         t.wait(Edge::Falling).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn watchdock_tickler(mut wd: WatchdogTimer) {
+    loop {
+        wd.feed();
+
+        embassy_time::Timer::after_millis(500).await;
     }
 }
 
@@ -65,6 +75,12 @@ async fn main(spawner: embassy_executor::Spawner) {
     vref.dac0(ReferenceVoltage::_1V50);
 
     // embassy_time::Timer::after_secs(3).await;
+
+    let mut watchdog = dp.WDT.constrain();
+    watchdog.start(WatchdogTimeout::S4);
+    watchdog.lock();
+
+    spawner.must_spawn(watchdock_tickler(watchdog));
 
     spawner.must_spawn(lol(gpio::Pin::new(b.pb2.downgrade().downgrade()), c.pc0));
 }

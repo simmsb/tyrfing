@@ -18,6 +18,17 @@ pub trait GpioExt {
     fn split(self) -> Self::Parts;
 }
 
+macro_rules! gpio_dispatch {
+    ($self:ident . $($rest:tt)*) => {
+        match $self.port_index() {
+            0 => (&*crate::pac::PORTA::ptr()).$($rest)*,
+            1 => (&*crate::pac::PORTB::ptr()).$($rest)*,
+            2 => (&*crate::pac::PORTC::ptr()).$($rest)*,
+            _ => unsafe { unreachable_unchecked() },
+        }
+    };
+}
+
 /// GPIO Register interface traits private to this module
 mod private {
     use super::Edge;
@@ -50,7 +61,6 @@ mod private {
     pub trait Gpio {
         type Reg: GpioRegExt + ?Sized;
 
-        fn ptr(&self) -> *const Self::Reg;
         fn port_index(&self) -> u8;
     }
 }
@@ -102,17 +112,6 @@ unsafe impl Sync for Gpiox {}
 
 impl private::Gpio for Gpiox {
     type Reg = dyn GpioRegExt;
-
-    fn ptr(&self) -> *const Self::Reg {
-        unsafe {
-            match self.index {
-                0 => &*avr_device::attiny1616::PORTA::PTR as &dyn GpioRegExt,
-                1 => &*avr_device::attiny1616::PORTB::PTR as &dyn GpioRegExt,
-                2 => &*avr_device::attiny1616::PORTC::PTR as &dyn GpioRegExt,
-                _ => unreachable_unchecked(),
-            }
-        }
-    }
 
     fn port_index(&self) -> u8 {
         self.index
@@ -285,25 +284,25 @@ where
     /// Convenience method to configure the pin to operate as an input pin
     /// and set the internal resistor floating
     pub fn into_floating_input(self) -> Pin<Gpio, Index, Input> {
-        unsafe { (*self.gpio.ptr()).enable_input_buffer(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).input(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).floating(self.index.index()) }
+        unsafe { gpio_dispatch!(self.enable_input_buffer(self.index.index())) }
+        unsafe { gpio_dispatch!(self.input(self.index.index())) }
+        unsafe { gpio_dispatch!(self.floating(self.index.index())) }
         self.into_mode()
     }
 
     /// Convenience method to configure the pin to operate as an input pin
     /// and set the internal resistor pull-up
     pub fn into_pull_up_input(self) -> Pin<Gpio, Index, Input> {
-        unsafe { (*self.gpio.ptr()).enable_input_buffer(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).input(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).pull_up(self.index.index()) }
+        unsafe { gpio_dispatch!(self.enable_input_buffer(self.index.index())) }
+        unsafe { gpio_dispatch!(self.input(self.index.index())) }
+        unsafe { gpio_dispatch!(self.pull_up(self.index.index())) }
         self.into_mode()
     }
 
     /// Configures the pin to operate as a stateful push-pull output pin
     pub fn into_push_pull_output(self) -> Pin<Gpio, Index, Output<Stateful>> {
-        unsafe { (*self.gpio.ptr()).enable_input_buffer(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).output(self.index.index()) }
+        unsafe { gpio_dispatch!(self.enable_input_buffer(self.index.index())) }
+        unsafe { gpio_dispatch!(self.output(self.index.index())) }
         self.into_mode()
     }
 
@@ -313,8 +312,8 @@ where
     /// which means that the current value cannot be read back. Toggling still
     /// works because the hardware itself has support for this.
     pub fn into_stateless_push_pull_output(self) -> Pin<Gpio, Index, Output<Stateless>> {
-        unsafe { (*self.gpio.ptr()).disable_input_buffer(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).output(self.index.index()) }
+        unsafe { gpio_dispatch!(self.disable_input_buffer(self.index.index())) }
+        unsafe { gpio_dispatch!(self.output(self.index.index())) }
         self.into_mode()
     }
 
@@ -323,9 +322,9 @@ where
     /// It is not strictly necessary to configure a pin into an analog mode,
     /// but the datasheet recommends to disable the input and output driver.
     pub fn into_analog_input(self) -> Pin<Gpio, Index, Analog> {
-        unsafe { (*self.gpio.ptr()).disable_input_buffer(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).input(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).floating(self.index.index()) }
+        unsafe { gpio_dispatch!(self.disable_input_buffer(self.index.index())) }
+        unsafe { gpio_dispatch!(self.input(self.index.index())) }
+        unsafe { gpio_dispatch!(self.floating(self.index.index())) }
         self.into_mode()
     }
 
@@ -343,9 +342,9 @@ where
     ///
     /// [`IntoMuxedPinset`]: crate::portmux::IntoMuxedPinset
     pub fn into_peripheral<PER>(self) -> Pin<Gpio, Index, Peripheral<PER>> {
-        unsafe { (*self.gpio.ptr()).disable_input_buffer(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).input(self.index.index()) }
-        unsafe { (*self.gpio.ptr()).floating(self.index.index()) }
+        unsafe { gpio_dispatch!(self.disable_input_buffer(self.index.index())) }
+        unsafe { gpio_dispatch!(self.input(self.index.index())) }
+        unsafe { gpio_dispatch!(self.floating(self.index.index())) }
         self.into_mode()
     }
 }
@@ -358,8 +357,8 @@ where
     /// Set pin inversion for inputs or outputs
     pub fn invert_polarity(&mut self, invert: Toggle) {
         match invert {
-            Toggle::On => unsafe { (*self.gpio.ptr()).inverted(self.index.index()) },
-            Toggle::Off => unsafe { (*self.gpio.ptr()).normal(self.index.index()) },
+            Toggle::On => unsafe { gpio_dispatch!(self.inverted(self.index.index())) },
+            Toggle::Off => unsafe { gpio_dispatch!(self.normal(self.index.index())) },
         }
     }
 }
@@ -373,8 +372,8 @@ where
     /// Enables / disables the internal pull up on input pins
     pub fn internal_pull_up(&mut self, on: Toggle) {
         match on {
-            Toggle::On => unsafe { (*self.gpio.ptr()).pull_up(self.index.index()) },
-            Toggle::Off => unsafe { (*self.gpio.ptr()).floating(self.index.index()) },
+            Toggle::On => unsafe { gpio_dispatch!(self.pull_up(self.index.index())) },
+            Toggle::Off => unsafe { gpio_dispatch!(self.floating(self.index.index())) },
         }
     }
 }
@@ -394,13 +393,13 @@ where
 {
     fn set_high(&mut self) -> Result<(), Self::Error> {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*self.gpio.ptr()).set_high(self.index.index()) };
+        unsafe { gpio_dispatch!(self.set_high(self.index.index())) };
         Ok(())
     }
 
     fn set_low(&mut self) -> Result<(), Self::Error> {
         // NOTE(unsafe) atomic write to a stateless register
-        unsafe { (*self.gpio.ptr()).set_low(self.index.index()) };
+        unsafe { gpio_dispatch!(self.set_low(self.index.index())) };
         Ok(())
     }
 }
@@ -417,7 +416,7 @@ where
 
     fn is_low(&mut self) -> Result<bool, Self::Error> {
         // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*self.gpio.ptr()).is_low(self.index.index()) })
+        Ok(unsafe { gpio_dispatch!(self.is_low(self.index.index())) })
     }
 }
 
@@ -432,11 +431,13 @@ where
 
     fn is_set_low(&mut self) -> Result<bool, Self::Error> {
         // NOTE(unsafe) atomic read with no side effects
-        Ok(unsafe { (*self.gpio.ptr()).is_set_low(self.index.index()) })
+        Ok(unsafe { gpio_dispatch!(self.is_set_low(self.index.index())) })
     }
 
     fn toggle(&mut self) -> Result<(), Self::Error> {
-        unsafe { (*self.gpio.ptr()).toggle(self.index.index()) }
+        unsafe {
+            gpio_dispatch!(self.toggle(self.index.index()));
+        }
         Ok(())
     }
 }
@@ -450,12 +451,12 @@ where
     /// Configure external interrupts from this pin
     pub fn configure_interrupt(&mut self, edge: Edge) {
         // NOTE(unsafe) atomic write with no side effects
-        unsafe { (*self.gpio.ptr()).configure_interrupt(self.index.index(), edge) }
+        unsafe { gpio_dispatch!(self.configure_interrupt(self.index.index(), edge)) }
     }
 
     pub fn is_interrupt_enabled(&self) -> bool {
         // NOTE(unsafe) atomic write with no side effects
-        unsafe { (*self.gpio.ptr()).is_interrupt_enabled(self.index.index()) }
+        unsafe { gpio_dispatch!(self.is_interrupt_enabled(self.index.index())) }
     }
 
     /// Disable the external interrupts from this pin
@@ -463,19 +464,19 @@ where
         // FIXME: This function should exist twice - once for stateful inputs and once for stateless
         //        need to keep the input buffer enabled or disabled
         // NOTE(unsafe) atomic write with no side effects
-        unsafe { (*self.gpio.ptr()).enable_input_buffer(self.index.index()) }
+        unsafe { gpio_dispatch!(self.enable_input_buffer(self.index.index())) }
     }
 
     /// Clear the interrupt pending bit for this pin
     pub fn clear_interrupt(&mut self) {
         // NOTE(unsafe) atomic write with no side effects
-        unsafe { (*self.gpio.ptr()).clear_interrupt_pending(self.index.index()) }
+        unsafe { gpio_dispatch!(self.clear_interrupt_pending(self.index.index())) }
     }
 
     /// Reads the interrupt pending bit for this pin
     pub fn is_interrupt_pending(&self) -> bool {
         // NOTE(unsafe) atomic write with no side effects
-        unsafe { (*self.gpio.ptr()).interrupt_pending(self.index.index()) }
+        unsafe { gpio_dispatch!(self.interrupt_pending(self.index.index())) }
     }
 }
 
@@ -603,11 +604,6 @@ macro_rules! gpio {
 
         impl private::Gpio for $Portx {
             type Reg = crate::pac::$porty::RegisterBlock;
-
-            #[inline(always)]
-            fn ptr(&self) -> *const Self::Reg {
-                crate::pac::$PORTX::ptr()
-            }
 
             #[inline(always)]
             fn port_index(&self) -> u8 {

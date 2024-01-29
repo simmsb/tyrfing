@@ -66,113 +66,63 @@ mod timer_queue {
 
     use super::{Alarm, NonMaxU8, Time, QUEUE_SIZE};
 
-    static mut ALLOCATED: Option<NonMaxU8> = None;
-
-    static mut FREE: Option<NonMaxU8> = Some(unsafe { NonMaxU8(0) });
-
     fn empty_cb(_x: *mut ()) {}
     const EMPTY_ALARM: Alarm = Alarm {
         callback: empty_cb,
         ctx: core::ptr::null_mut(),
     };
 
-    // AT initialisation:
-    //
-    // FREE (0) -> NEXTS[0] (1) -> NEXTS[1] (2) -> NEXTS[2] (3) -> NEXTS[3] (None)
-
-    static mut NEXTS: [Option<NonMaxU8>; QUEUE_SIZE] = {
-        let mut i = 0;
-
-        let mut nexts = [None; QUEUE_SIZE];
-
-        while i < QUEUE_SIZE - 1 {
-            nexts[i] = unsafe { Some(NonMaxU8(i as u8 + 1)) };
-            i += 1;
-        }
-
-        nexts
-    };
+    static mut IN_PROGRESS: bool = false;
+    static mut TAKEN: [bool; QUEUE_SIZE] = [false; QUEUE_SIZE];
     static mut ATS: [Time; QUEUE_SIZE] = [0; QUEUE_SIZE];
     static mut ALARMS: [Alarm; QUEUE_SIZE] = [EMPTY_ALARM; QUEUE_SIZE];
 
     pub fn allocate(_: CriticalSection) -> Option<NonMaxU8> {
         unsafe {
-            FREE.map(|x| {
-                FREE = *NEXTS.get_unchecked(x.0 as usize);
-                NEXTS[x.0 as usize] = None;
-                x
-            })
+            for i in 0..QUEUE_SIZE {
+                if !TAKEN[i] {
+                    TAKEN[i] = true;
+                    return Some(NonMaxU8(i as u8));
+                }
+            }
+
+            None
         }
     }
 
-    pub fn free(_: CriticalSection, id: NonMaxU8) {
+    pub fn mark_in_progress(_: CriticalSection) -> bool {
+        unsafe { !core::mem::replace(&mut IN_PROGRESS, true) }
+    }
+
+    pub fn mark_finished(_: CriticalSection) {
         unsafe {
-            *NEXTS.get_unchecked_mut(id.0 as usize) = FREE;
-            *ALARMS.get_unchecked_mut(id.0 as usize) = EMPTY_ALARM;
-            FREE = Some(id);
+            IN_PROGRESS = false;
         }
     }
 
-    pub fn push(_: CriticalSection, id: NonMaxU8, timestamp: Time) {
+    pub fn process(ticks_elapsed: Time) {
         unsafe {
-            let mut next = &mut ALLOCATED;
-
-            while let Some(i) = next {
-                let next_at = at(*i);
-
-                if next_at > timestamp {
-                    *NEXTS.get_unchecked_mut(id.0 as usize) = Some(*i);
-                    break;
+            for i in 0..QUEUE_SIZE {
+                if !TAKEN[i] {
+                    continue;
                 }
 
-                next = NEXTS.get_unchecked_mut(i.0 as usize);
-            }
+                if ATS[i] <= ticks_elapsed {
+                    let Alarm { callback, ctx } = ALARMS[i];
 
-            *next = Some(id);
-        }
-    }
+                    TAKEN[i] = false;
 
-    pub fn process(start: NonMaxU8, ticks_elapsed: Time) -> Option<NonMaxU8> {
-        let mut next = Some(start);
-
-        while let Some(id) = next {
-            if at(id) <= ticks_elapsed {
-                next = unsafe { *NEXTS.get_unchecked(id.0 as usize) };
-                let Alarm { callback, ctx } = alarm(id);
-
-                avr_hal_generic::avr_device::interrupt::free(|t| free(t, id));
-
-                callback(ctx);
-            } else {
-                return Some(id);
+                    callback(ctx);
+                }
             }
         }
-
-        None
     }
-
-    pub fn at(id: NonMaxU8) -> Time {
-        unsafe { *ATS.get_unchecked(id.0 as usize) }
-    }
-
     pub fn set_at(_: CriticalSection, id: NonMaxU8, v: Time) {
         unsafe { *ATS.get_unchecked_mut(id.0 as usize) = v }
     }
 
-    pub fn alarm(id: NonMaxU8) -> Alarm {
-        unsafe { *ALARMS.get_unchecked(id.0 as usize) }
-    }
-
     pub fn set_alarm(_: CriticalSection, id: NonMaxU8, a: Alarm) {
         unsafe { *ALARMS.get_unchecked_mut(id.0 as usize) = a }
-    }
-
-    pub fn take_allocated(_: CriticalSection) -> Option<NonMaxU8> {
-        unsafe { ALLOCATED.take() }
-    }
-
-    pub fn put_allocated(_: CriticalSection, x: Option<NonMaxU8>) {
-        unsafe { ALLOCATED = x }
     }
 }
 
@@ -183,106 +133,61 @@ mod wake_queue {
 
     use super::{NonMaxU8, Time, QUEUE_SIZE};
 
-    static mut ALLOCATED: Option<NonMaxU8> = None;
-
-    static mut FREE: Option<NonMaxU8> = Some(unsafe { NonMaxU8(0) });
-
-    static mut NEXTS: [Option<NonMaxU8>; QUEUE_SIZE] = {
-        let mut i = 0;
-
-        let mut nexts = [None; QUEUE_SIZE];
-
-        while i < QUEUE_SIZE - 1 {
-            nexts[i] = unsafe { Some(NonMaxU8(i as u8)) };
-            i += 1;
-        }
-
-        nexts
-    };
+    static mut IN_PROGRESS: bool = false;
+    static mut TAKEN: [bool; QUEUE_SIZE] = [false; QUEUE_SIZE];
     static mut ATS: [Time; QUEUE_SIZE] = [0; QUEUE_SIZE];
     const X: Option<Waker> = None;
     static mut WAKERS: [Option<Waker>; QUEUE_SIZE] = [X; QUEUE_SIZE];
 
     pub fn allocate(_: CriticalSection) -> Option<NonMaxU8> {
         unsafe {
-            FREE.map(|x| {
-                FREE = *NEXTS.get_unchecked(x.0 as usize);
-                NEXTS[x.0 as usize] = None;
-                x
-            })
-        }
-    }
-
-    pub fn free(_: CriticalSection, id: NonMaxU8) {
-        unsafe {
-            *NEXTS.get_unchecked_mut(id.0 as usize) = FREE;
-            *WAKERS.get_unchecked_mut(id.0 as usize) = None;
-            FREE = Some(id);
-        }
-    }
-
-    pub fn push(_: CriticalSection, id: NonMaxU8, timestamp: Time) {
-        unsafe {
-            let mut next = &mut ALLOCATED;
-
-            while let Some(i) = next {
-                let next_at = at(*i);
-
-                if next_at > timestamp {
-                    *NEXTS.get_unchecked_mut(id.0 as usize) = Some(*i);
-                    break;
+            for i in 0..QUEUE_SIZE {
+                if !TAKEN[i] {
+                    TAKEN[i] = true;
+                    return Some(NonMaxU8(i as u8));
                 }
-
-                next = NEXTS.get_unchecked_mut(i.0 as usize);
             }
 
-            *next = Some(id);
+            None
         }
     }
 
-    pub fn process(start: NonMaxU8, ticks_elapsed: Time) -> Option<NonMaxU8> {
-        let mut next = Some(start);
+    pub fn mark_in_progress(_: CriticalSection) -> bool {
+        unsafe { !core::mem::replace(&mut IN_PROGRESS, true) }
+    }
 
-        while let Some(id) = next {
-            if at(id) <= ticks_elapsed {
-                next = unsafe { *NEXTS.get_unchecked_mut(id.0 as usize) };
-                let w = waker(id);
+    pub fn mark_finished(_: CriticalSection) {
+        unsafe {
+            IN_PROGRESS = false;
+        }
+    }
 
-                avr_hal_generic::avr_device::interrupt::free(|t| free(t, id));
-
-                if let Some(w) = w {
-                    w.wake();
+    pub fn process(ticks_elapsed: Time) {
+        unsafe {
+            for i in 0..QUEUE_SIZE {
+                if !TAKEN[i] {
+                    continue;
                 }
-            } else {
-                return Some(id);
+
+                if ATS[i] <= ticks_elapsed {
+                    let w = WAKERS[i].take();
+
+                    TAKEN[i] = false;
+
+                    if let Some(w) = w {
+                        w.wake();
+                    }
+                }
             }
         }
-
-        None
-    }
-
-    pub fn at(id: NonMaxU8) -> Time {
-        unsafe { *ATS.get_unchecked(id.0 as usize) }
     }
 
     pub fn set_at(_: CriticalSection, id: NonMaxU8, v: Time) {
         unsafe { *ATS.get_unchecked_mut(id.0 as usize) = v }
     }
 
-    pub fn waker(id: NonMaxU8) -> Option<Waker> {
-        unsafe { WAKERS.get_unchecked(id.0 as usize).clone() }
-    }
-
     pub fn set_waker(_: CriticalSection, id: NonMaxU8, w: Option<Waker>) {
         unsafe { *WAKERS.get_unchecked_mut(id.0 as usize) = w }
-    }
-
-    pub fn take_allocated(_: CriticalSection) -> Option<NonMaxU8> {
-        unsafe { ALLOCATED.take() }
-    }
-
-    pub fn put_allocated(_: CriticalSection, x: Option<NonMaxU8>) {
-        unsafe { ALLOCATED = x }
     }
 }
 
@@ -311,7 +216,6 @@ impl Driver for AvrTc0EmbassyTimeDriver {
         unsafe {
             avr_hal_generic::avr_device::interrupt::free(|t| {
                 timer_queue::set_at(t, NonMaxU8(alarm.id()), timestamp);
-                timer_queue::push(t, NonMaxU8(alarm.id()), timestamp);
             });
         }
         true
@@ -328,7 +232,6 @@ impl TimerQueue for AvrTc0EmbassyTimeDriver {
 
             wake_queue::set_waker(t, id, Some(waker.clone()));
             wake_queue::set_at(t, id, at);
-            wake_queue::push(t, id, at);
         })
     }
 }
@@ -352,22 +255,26 @@ static mut INTERRUPT_STATE: MaybeUninit<InterruptState> = MaybeUninit::uninit();
 pub unsafe fn __tcb0_top() {
     let state = unsafe { &mut *INTERRUPT_STATE.as_mut_ptr() };
     let _ = state.led.as_mut().map(|p| p.set_low());
-    let (timer_queue_next, wake_queue_next, ticks_elapsed) = avr_device::interrupt::free(|t| {
-        TICKS_ELAPSED += TICKS_PER_COUNT;
-        (
-            timer_queue::take_allocated(t),
-            wake_queue::take_allocated(t),
-            TICKS_ELAPSED,
-        )
-    }); //minimize critical section
+    let (should_process_timers, should_process_wake, ticks_elapsed) =
+        avr_device::interrupt::free(|t| {
+            TICKS_ELAPSED += TICKS_PER_COUNT;
+            (
+                timer_queue::mark_in_progress(t),
+                wake_queue::mark_in_progress(t),
+                TICKS_ELAPSED,
+            )
+        });
 
-    let timer_queue_next =
-        timer_queue_next.and_then(|next| timer_queue::process(next, ticks_elapsed));
-    let wake_queue_next = wake_queue_next.and_then(|next| wake_queue::process(next, ticks_elapsed));
+    if should_process_timers {
+        timer_queue::process(ticks_elapsed);
+    }
+    if should_process_wake {
+        wake_queue::process(ticks_elapsed);
+    }
 
     avr_device::interrupt::free(|t| {
-        timer_queue::put_allocated(t, timer_queue_next);
-        wake_queue::put_allocated(t, wake_queue_next);
+        timer_queue::mark_finished(t);
+        wake_queue::mark_finished(t);
     });
     state.counter.clear_event(tcb::Event::CaptureCompare);
     let _ = state.led.as_mut().map(|p| p.set_high());
