@@ -113,11 +113,10 @@ impl ButtonEvent {
     }
 }
 
-static BUTTON_EVENTS: embassy_sync::channel::Channel<
+static BUTTON_EVENTS: embassy_sync::signal::Signal<
     embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
     ButtonEvent,
-    1,
-> = embassy_sync::channel::Channel::new();
+> = embassy_sync::signal::Signal::new();
 
 #[embassy_executor::task]
 async fn event_generator(mut t: gpio::Pin<Input>) {
@@ -142,10 +141,10 @@ async fn event_generator(mut t: gpio::Pin<Input>) {
                 }
             } else {
                 BUTTON_EVENTS
-                    .send(ButtonEvent::hold_from_count(click_count))
-                    .await;
+                    .signal(ButtonEvent::hold_from_count(click_count))
+                    ;
                 t.wait_low().await;
-                BUTTON_EVENTS.send(ButtonEvent::HoldEnd).await;
+                BUTTON_EVENTS.signal(ButtonEvent::HoldEnd);
 
                 break 'outer;
             }
@@ -158,8 +157,8 @@ async fn event_generator(mut t: gpio::Pin<Input>) {
                 .is_err()
             {
                 BUTTON_EVENTS
-                    .send(ButtonEvent::click_from_count(click_count))
-                    .await;
+                    .signal(ButtonEvent::click_from_count(click_count))
+                    ;
 
                 break 'outer;
             }
@@ -170,7 +169,7 @@ async fn event_generator(mut t: gpio::Pin<Input>) {
 #[embassy_executor::task]
 async fn suck_events() {
     loop {
-        let _evt = BUTTON_EVENTS.receive().await;
+        let _evt = BUTTON_EVENTS.wait().await;
     }
 }
 

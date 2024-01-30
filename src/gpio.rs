@@ -83,7 +83,6 @@ impl Pin<Input> {
         InputFuture::new(self.into_ref(), edge)
     }
 
-    #[inline]
     pub async fn wait_high(&mut self) {
         if self.0.is_high().unwrap_infallible() {
             return;
@@ -92,7 +91,6 @@ impl Pin<Input> {
         self.wait(Edge::Rising).await
     }
 
-    #[inline]
     pub async fn wait_low(&mut self) {
         if self.0.is_low().unwrap_infallible() {
             return;
