@@ -17,16 +17,16 @@ avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-sect
 # embassy-time-driver = { git = "https://github.com/embassy-rs/embassy", version = "0.1.0", features = ["tick-hz-250"] }
 # embassy-time-queue-driver = { version = "0.1.0", git = "https://github.com/embassy-rs/embassy" }
 
-embassy-executor = { features = ["nightly", "arch-avr", "executor-thread" ], path = "vendor/embassy/embassy-executor" }
+embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], path = "vendor/embassy/embassy-executor" }
 embassy-time = { version = "0.3.0", path = "vendor/embassy/embassy-time" }
 embassy-time-driver = { version = "0.1.0", features = ["tick-hz-32"], path = "vendor/embassy/embassy-time-driver" }
 embassy-time-queue-driver = { version = "0.1.0", path = "vendor/embassy/embassy-time-queue-driver" }
-embassy-sync = { path = "vendor/embassy/embassy-sync" }
+embassy-sync = { path = "vendor/embassy/embassy-sync", features = ["turbowakers"] }
 embassy-futures = { path = "vendor/embassy/embassy-futures" }
 
 env_int = "0.1.0"
 futures-util = { version = "0.3.30", default-features = false, features = ["portable-atomic"] }
-portable-atomic = "1.6.0"
+portable-atomic = { version = "1.6.0", features = ["unsafe-assume-single-core"] }
 atxtiny-hal = "*"
 fugit = { version = "0.3.7", default-features = false }
 

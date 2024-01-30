@@ -1,7 +1,8 @@
 use core::ptr;
 use core::ptr::NonNull;
-use core::sync::atomic::{AtomicPtr, Ordering};
+use core::sync::atomic::Ordering;
 use core::task::Waker;
+use portable_atomic::AtomicPtr;
 
 /// Utility struct to register and wake a waker.
 pub struct AtomicWaker {

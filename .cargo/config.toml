@@ -6,4 +6,4 @@ runner = "ravedude uno -cb 57600"
 
 [unstable]
 build-std = ["core", "panic_abort"]
-build-std-features = ["panic_immediate_abort", "compiler-builtins-mangled-names"]
+build-std-features = ["panic_immediate_abort", "compiler-builtins-mangled-names", "core/turbowakers"]

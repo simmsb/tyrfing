@@ -196,6 +196,7 @@ dependencies = [
  "embedded-io-async",
  "futures-util",
  "heapless",
+ "portable-atomic",
 ]
 
 [[package]]

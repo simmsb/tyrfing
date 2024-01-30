@@ -1,7 +1,11 @@
 use core::{hint::unreachable_unchecked, task::Poll};
 
-use atxtiny_hal::gpio::{Edge, GpioRegExt, Input, PXx};
+use atxtiny_hal::{
+    embedded_hal::digital::InputPin,
+    gpio::{Edge, GpioRegExt, Input, PXx},
+};
 use avr_device::attiny1616::{PORTA, PORTB, PORTC};
+use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
 use embassy_sync::waitqueue::AtomicWaker;
 use futures_util::Future;
 
@@ -32,9 +36,7 @@ impl<T: GpioRegExt> GpioInt for T {
     }
 }
 
-// this function is 248 bytes when compiled, + 3x 100 bytes for each handler
-// when inlined, each handler is only 150 bytes
-#[inline(always)]
+#[inline(never)]
 fn int_handler(gpio: &dyn GpioInt, wakers: &[AtomicWaker]) {
     for (i, w) in wakers.iter().enumerate() {
         if gpio.is_pending(i as u8) {
@@ -76,8 +78,27 @@ impl<Mode> Pin<Mode> {
 }
 
 impl Pin<Input> {
+    #[inline]
     pub fn wait(&mut self, edge: Edge) -> impl Future<Output = ()> + '_ {
         InputFuture::new(self.into_ref(), edge)
+    }
+
+    #[inline]
+    pub async fn wait_high(&mut self) {
+        if self.0.is_high().unwrap_infallible() {
+            return;
+        }
+
+        self.wait(Edge::Rising).await
+    }
+
+    #[inline]
+    pub async fn wait_low(&mut self) {
+        if self.0.is_low().unwrap_infallible() {
+            return;
+        }
+
+        self.wait(Edge::Falling).await
     }
 }
 
@@ -87,6 +108,7 @@ struct InputFuture<'d> {
 }
 
 impl<'d> InputFuture<'d> {
+    #[inline]
     fn new(mut pin: PeripheralRef<'d, Pin<Input>>, edge: Edge) -> Self {
         pin.0.clear_interrupt();
 
