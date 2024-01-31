@@ -3,7 +3,9 @@ use atxtiny_hal::{
     embedded_hal::digital::OutputPin,
     gpio::{Output, Pin, Portc, Stateful},
     timer::{
-        rtc::{Pit, RTCClockSource}, tcb::{self, TCBClockSource}, Counter
+        rtc::{Pit, RTCClockSource},
+        tcb::{self, TCBClockSource},
+        Counter,
     },
 };
 use avr_device::attiny1616::{rtc::pitctrla::PERIOD_A, RTC};
@@ -276,10 +278,7 @@ pub unsafe fn handle_tick() {
     let _ = state.led.as_mut().map(|p| p.set_high());
 }
 
-pub fn init_system_time(
-    tc: RTC,
-    p: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, Output<Stateful>>>,
-) {
+pub fn init_system_time(tc: RTC, p: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, Output<Stateful>>>) {
     unsafe {
         avr_device::interrupt::enable();
         avr_device::interrupt::free(|_| {
@@ -289,7 +288,10 @@ pub fn init_system_time(
             pit.enable_interrupt();
             pit.start();
 
-            INTERRUPT_STATE = MaybeUninit::new(InterruptState { counter: pit, led: p });
+            INTERRUPT_STATE = MaybeUninit::new(InterruptState {
+                counter: pit,
+                led: p,
+            });
         });
     }
 }

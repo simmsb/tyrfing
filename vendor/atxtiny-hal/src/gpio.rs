@@ -20,12 +20,23 @@ pub trait GpioExt {
 
 macro_rules! gpio_dispatch {
     ($self:ident . $($rest:tt)*) => {
+        // all PORTx register blocks have the same layout
+        // so do a cheeky cast
         match $self.port_index() {
-            0 => (&*crate::pac::PORTA::ptr()).$($rest)*,
-            1 => (&*crate::pac::PORTB::ptr()).$($rest)*,
-            2 => (&*crate::pac::PORTC::ptr()).$($rest)*,
-            _ => unsafe { unreachable_unchecked() },
-        }
+            0 => &*crate::pac::PORTA::ptr(),
+            1 => &*(crate::pac::PORTB::ptr() as *const crate::pac::porta::RegisterBlock),
+            2 => &*(crate::pac::PORTC::ptr() as *const crate::pac::porta::RegisterBlock),
+            _ => {
+                #[allow(unused_unsafe)]
+                unsafe { unreachable_unchecked() }
+            },
+        }.$($rest)*
+        // match $self.port_index() {
+        //     0 => (&*crate::pac::PORTA::ptr()).$($rest)*,
+        //     1 => (&*crate::pac::PORTB::ptr()).$($rest)*,
+        //     2 => (&*crate::pac::PORTC::ptr()).$($rest)*,
+        //     _ => unsafe { unreachable_unchecked() },
+        // }
     };
 }
 

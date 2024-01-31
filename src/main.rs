@@ -118,50 +118,75 @@ static BUTTON_EVENTS: embassy_sync::signal::Signal<
     ButtonEvent,
 > = embassy_sync::signal::Signal::new();
 
+#[derive(Clone, Copy)]
+enum EventGenState {
+    FirstClick,
+    ForHigh { clicks: u8 },
+    ForLow { clicks: u8 },
+    HoldFinish,
+}
+
+// looks bad becasue we have to reuse the same code for as much of the awaits as
+// possible
 #[embassy_executor::task]
 async fn event_generator(mut t: gpio::Pin<Input>) {
-    'outer: loop {
-        t.wait_high().await;
-        let mut click_count = 0;
+    let mut state = EventGenState::FirstClick;
 
-        loop {
-            let now = Instant::now();
+    loop {
+        let (wait_until, wait_for) = match state {
+            EventGenState::FirstClick => (None, Edge::Rising),
+            EventGenState::ForHigh { .. } => (Some(Duration::from_millis(300)), Edge::Rising),
+            EventGenState::ForLow { .. } => (Some(Duration::from_millis(300)), Edge::Falling),
+            EventGenState::HoldFinish => (None, Edge::Falling),
+        };
 
-            // wait for the switch to depress:
-            // - if it's held for more than 300ms, emit a hold event
-            // - if it's held for less than 10ms, treat it as flutter and don't count a click
-            // - if it's clicked, increment the click counter
-            if embassy_time::with_timeout(Duration::from_millis(300), t.wait_low())
+        let now = Instant::now();
+        let r = if let Some(wait_until) = wait_until {
+            embassy_time::with_timeout(wait_until, t.wait(wait_for))
                 .await
                 .is_ok()
-            {
-                // ignore small presses, likely fluttering
-                if now.elapsed() > Duration::from_millis(10) {
-                    click_count += 1;
+        } else {
+            t.wait(wait_for).await;
+            true
+        };
+
+        let (state_, evt) = match state {
+            EventGenState::FirstClick => (EventGenState::ForLow { clicks: 1 }, None),
+            EventGenState::ForHigh { clicks } => {
+                if r {
+                    (EventGenState::ForLow { clicks }, None)
+                } else {
+                    (
+                        EventGenState::FirstClick,
+                        Some(ButtonEvent::click_from_count(clicks)),
+                    )
                 }
-            } else {
-                BUTTON_EVENTS
-                    .signal(ButtonEvent::hold_from_count(click_count))
-                    ;
-                t.wait_low().await;
-                BUTTON_EVENTS.signal(ButtonEvent::HoldEnd);
-
-                break 'outer;
             }
-
-            // wait for another switch press
-            // - if there isn't a click within 300ms, emit the clicks we have so far
-            // - if there is a click, loop and handle the depress
-            if embassy_time::with_timeout(Duration::from_millis(300), t.wait_high())
-                .await
-                .is_err()
-            {
-                BUTTON_EVENTS
-                    .signal(ButtonEvent::click_from_count(click_count))
-                    ;
-
-                break 'outer;
+            EventGenState::ForLow { clicks } => {
+                if r {
+                    (
+                        EventGenState::ForHigh {
+                            clicks: clicks
+                                + if now.elapsed() > Duration::from_millis(10) {
+                                    1
+                                } else {
+                                    0
+                                },
+                        },
+                        None,
+                    )
+                } else {
+                    (
+                        EventGenState::HoldFinish,
+                        Some(ButtonEvent::hold_from_count(clicks)),
+                    )
+                }
             }
+            EventGenState::HoldFinish => (EventGenState::FirstClick, Some(ButtonEvent::HoldEnd)),
+        };
+        state = state_;
+        if let Some(evt) = evt {
+            BUTTON_EVENTS.signal(evt);
         }
     }
 }
@@ -239,7 +264,7 @@ async fn main(spawner: embassy_executor::Spawner) {
     // embassy_time::Timer::after_secs(3).await;
 
     let mut watchdog = dp.WDT.constrain();
-    watchdog.start(WatchdogTimeout::S4);
+    watchdog.start(WatchdogTimeout::S1);
     watchdog.lock();
 
     spawner.must_spawn(watchdock_tickler(watchdog));

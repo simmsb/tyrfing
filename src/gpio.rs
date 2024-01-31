@@ -17,9 +17,16 @@ const PORTC_PIN_COUNT: usize = 6;
 
 const NEW_AW: AtomicWaker = AtomicWaker::new();
 
-static PORTA_WAKERS: [AtomicWaker; PORTA_PIN_COUNT] = [NEW_AW; PORTA_PIN_COUNT];
-static PORTB_WAKERS: [AtomicWaker; PORTB_PIN_COUNT] = [NEW_AW; PORTB_PIN_COUNT];
-static PORTC_WAKERS: [AtomicWaker; PORTC_PIN_COUNT] = [NEW_AW; PORTC_PIN_COUNT];
+static WAKERS: [AtomicWaker; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT] =
+    [NEW_AW; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT];
+
+#[inline]
+fn get_waker(port: u8, pin: u8) -> &'static AtomicWaker {
+    unsafe {
+        // hah
+        WAKERS.get_unchecked((port * PORTA_PIN_COUNT as u8 + pin) as usize)
+    }
+}
 
 trait GpioInt {
     fn is_pending(&self, n: u8) -> bool;
@@ -37,28 +44,29 @@ impl<T: GpioRegExt> GpioInt for T {
 }
 
 #[inline(never)]
-fn int_handler(gpio: &dyn GpioInt, wakers: &[AtomicWaker]) {
-    for (i, w) in wakers.iter().enumerate() {
-        if gpio.is_pending(i as u8) {
+fn int_handler(gpio: &dyn GpioInt, port: u8, pin_count: u8) {
+    for i in 0..pin_count {
+        let w = get_waker(port, i);
+        if gpio.is_pending(i) {
             w.wake();
-            gpio.clear(i as u8);
+            gpio.clear(i);
         }
     }
 }
 
 #[avr_device::interrupt(attiny1616)]
 unsafe fn PORTA_PORT() {
-    int_handler(&*PORTA::PTR as &dyn GpioInt, PORTA_WAKERS.as_slice());
+    int_handler(&*PORTA::PTR as &dyn GpioInt, 0, PORTA_PIN_COUNT as u8);
 }
 
 #[avr_device::interrupt(attiny1616)]
 unsafe fn PORTB_PORT() {
-    int_handler(&*PORTB::PTR as &dyn GpioInt, PORTB_WAKERS.as_slice());
+    int_handler(&*PORTB::PTR as &dyn GpioInt, 1, PORTB_PIN_COUNT as u8);
 }
 
 #[avr_device::interrupt(attiny1616)]
 unsafe fn PORTC_PORT() {
-    int_handler(&*PORTC::PTR as &dyn GpioInt, PORTC_WAKERS.as_slice());
+    int_handler(&*PORTC::PTR as &dyn GpioInt, 2, PORTC_PIN_COUNT as u8);
 }
 
 pub struct Pin<Mode: 'static>(PXx<Mode>);
@@ -78,31 +86,34 @@ impl<Mode> Pin<Mode> {
 }
 
 impl Pin<Input> {
+    pub async fn wait(&mut self, edge: Edge) {
+        let is_high = self.0.is_high().unwrap_infallible();
+        if match edge {
+            Edge::Rising => is_high,
+            Edge::Falling => !is_high,
+            Edge::RisingFalling => false,
+            Edge::LowLevel => !is_high,
+        } {
+            return;
+        }
+
+        InputFuture::new(self.into_ref(), edge).await;
+    }
+
     #[inline]
-    pub fn wait(&mut self, edge: Edge) -> impl Future<Output = ()> + '_ {
-        InputFuture::new(self.into_ref(), edge)
+    pub fn wait_high(&mut self) -> impl Future<Output = ()> + '_ {
+        self.wait(Edge::Rising)
     }
 
-    pub async fn wait_high(&mut self) {
-        if self.0.is_high().unwrap_infallible() {
-            return;
-        }
-
-        self.wait(Edge::Rising).await
-    }
-
-    pub async fn wait_low(&mut self) {
-        if self.0.is_low().unwrap_infallible() {
-            return;
-        }
-
-        self.wait(Edge::Falling).await
+    #[inline]
+    pub fn wait_low(&mut self) -> impl Future<Output = ()> + '_ {
+        self.wait(Edge::Falling)
     }
 }
 
 struct InputFuture<'d> {
     pin: PeripheralRef<'d, Pin<Input>>,
-    waker: &'static AtomicWaker,
+    // waker: &'static AtomicWaker,
 }
 
 impl<'d> InputFuture<'d> {
@@ -112,16 +123,7 @@ impl<'d> InputFuture<'d> {
 
         pin.0.configure_interrupt(edge);
 
-        let wakers_table = match pin.0.port_index() {
-            0 => PORTA_WAKERS.as_slice(),
-            1 => PORTB_WAKERS.as_slice(),
-            2 => PORTC_WAKERS.as_slice(),
-            _ => unsafe { unreachable_unchecked() },
-        };
-
-        let waker = unsafe { wakers_table.get_unchecked(pin.0.pin_index() as usize) };
-
-        Self { pin, waker }
+        Self { pin }
     }
 }
 
@@ -132,7 +134,10 @@ impl<'d> Future for InputFuture<'d> {
         self: core::pin::Pin<&mut Self>,
         cx: &mut core::task::Context<'_>,
     ) -> core::task::Poll<Self::Output> {
-        self.waker.register(cx.waker());
+        let pin_idx = self.pin.0.pin_index();
+        let waker = get_waker(self.pin.0.port_index(), pin_idx);
+
+        waker.register(cx.waker());
 
         if !self.pin.0.is_interrupt_enabled() {
             return Poll::Ready(());
