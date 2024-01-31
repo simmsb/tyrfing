@@ -19,6 +19,7 @@ use atxtiny_hal::vref::VrefExt;
 use atxtiny_hal::watchdog::WatchdogTimer;
 use avr_device::attiny1616::SLPCTRL;
 use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
+use futures_util::pin_mut;
 use core::future::Future;
 use embassy_time::Duration;
 use embassy_time::Instant;
@@ -27,6 +28,7 @@ use fugit::Rate;
 pub mod gpio;
 pub mod peripheral_ref;
 pub mod time;
+pub mod states;
 
 #[export_name = "__sleep"]
 unsafe fn sleep() {
@@ -66,6 +68,18 @@ pub fn set_sleep_mode(mode: SleepMode) {
             .modify(|_, w| w.smode().variant(mode.into()));
     }
 }
+
+
+// embassy_futures::select is more efficient the futures_util select that embassy_time uses
+pub async fn with_timeout<F: Future>(timeout: Duration, fut: F) -> Result<F::Output, ()> {
+    let timeout_fut = embassy_time::Timer::after(timeout);
+    pin_mut!(fut);
+    match embassy_futures::select::select(fut, timeout_fut).await {
+        embassy_futures::select::Either::First(r) => Ok(r),
+        embassy_futures::select::Either::Second(_) => Err(()),
+    }
+}
+
 
 pub enum ButtonEvent {
     Click1,
@@ -142,7 +156,7 @@ async fn event_generator(mut t: gpio::Pin<Input>) {
 
         let now = Instant::now();
         let r = if let Some(wait_until) = wait_until {
-            embassy_time::with_timeout(wait_until, t.wait(wait_for))
+            with_timeout(wait_until, t.wait(wait_for))
                 .await
                 .is_ok()
         } else {
@@ -194,7 +208,7 @@ async fn event_generator(mut t: gpio::Pin<Input>) {
 #[embassy_executor::task]
 async fn suck_events() {
     loop {
-        let _evt = BUTTON_EVENTS.wait().await;
+        states::on_ramping().await;
     }
 }
 
@@ -216,6 +230,7 @@ async fn lol(p: atxtiny_hal::gpio::PC0<Input>) {
 
 #[embassy_executor::task]
 async fn watchdock_tickler(mut wd: WatchdogTimer) {
+    // This should also do ADC stuff
     loop {
         wd.feed();
 

@@ -20,7 +20,6 @@ const NEW_AW: AtomicWaker = AtomicWaker::new();
 static WAKERS: [AtomicWaker; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT] =
     [NEW_AW; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT];
 
-#[inline]
 fn get_waker(port: u8, pin: u8) -> &'static AtomicWaker {
     unsafe {
         // hah
@@ -43,7 +42,6 @@ impl<T: GpioRegExt> GpioInt for T {
     }
 }
 
-#[inline(never)]
 fn int_handler(gpio: &dyn GpioInt, port: u8, pin_count: u8) {
     for i in 0..pin_count {
         let w = get_waker(port, i);
@@ -68,6 +66,12 @@ unsafe fn PORTB_PORT() {
 unsafe fn PORTC_PORT() {
     int_handler(&*PORTC::PTR as &dyn GpioInt, 2, PORTC_PIN_COUNT as u8);
 }
+
+
+// TODO: potentially make this generic in gpio and pin
+//
+// if we use multiple instances we'll be throwing away space, but if there's
+// only one then we should save a bit of code
 
 pub struct Pin<Mode: 'static>(PXx<Mode>);
 
@@ -100,12 +104,10 @@ impl Pin<Input> {
         InputFuture::new(self.into_ref(), edge).await;
     }
 
-    #[inline]
     pub fn wait_high(&mut self) -> impl Future<Output = ()> + '_ {
         self.wait(Edge::Rising)
     }
 
-    #[inline]
     pub fn wait_low(&mut self) -> impl Future<Output = ()> + '_ {
         self.wait(Edge::Falling)
     }
@@ -117,7 +119,6 @@ struct InputFuture<'d> {
 }
 
 impl<'d> InputFuture<'d> {
-    #[inline]
     fn new(mut pin: PeripheralRef<'d, Pin<Input>>, edge: Edge) -> Self {
         pin.0.clear_interrupt();
 

@@ -73,7 +73,7 @@ impl Instant {
     /// Panics on over/underflow.
     pub fn duration_since(&self, earlier: Instant) -> Duration {
         Duration {
-            ticks: unwrap!(self.ticks.checked_sub(earlier.ticks)),
+            ticks: self.ticks - earlier.ticks,
         }
     }
 
@@ -120,8 +120,9 @@ impl Add<Duration> for Instant {
     type Output = Instant;
 
     fn add(self, other: Duration) -> Instant {
-        self.checked_add(other)
-            .expect("overflow when adding duration to instant")
+        Instant { ticks: self.ticks + other.ticks }
+        // self.checked_add(other)
+        //     .expect("overflow when adding duration to instant")
     }
 }
 
@@ -135,8 +136,9 @@ impl Sub<Duration> for Instant {
     type Output = Instant;
 
     fn sub(self, other: Duration) -> Instant {
-        self.checked_sub(other)
-            .expect("overflow when subtracting duration from instant")
+        Instant { ticks: self.ticks - other.ticks }
+        // self.checked_sub(other)
+        //     .expect("overflow when subtracting duration from instant")
     }
 }
 
