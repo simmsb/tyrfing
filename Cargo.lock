@@ -160,6 +160,7 @@ dependencies = [
  "fugit",
  "futures-util",
  "portable-atomic",
+ "ufmt",
 ]
 
 [[package]]

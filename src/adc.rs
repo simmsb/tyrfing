@@ -79,7 +79,7 @@ impl<INST: AdcRegExt> Adc<INST, Disabled> {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Temperature(u16);
+pub struct Temperature(pub u16);
 
 impl Temperature {
     pub fn kelvin_times_64(self) -> u16 {
@@ -98,6 +98,12 @@ impl Temperature {
     pub fn celcius(self) -> i16 {
         (self.kelvin_times_64() >> 6) as i16 - 275
     }
+
+    pub fn smooth_with(self, smoother: &mut crate::Smoother) -> Self {
+        smoother.update(self.0);
+
+        Self(smoother.0)
+    }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
@@ -114,6 +120,12 @@ impl Voltage {
     pub fn volts_times_100(self) -> u16 {
         let r = self.volts_times_40() as u16;
         r * 2 + r / 2
+    }
+
+    pub fn smooth_with(self, smoother: &mut crate::Smoother) -> Self {
+        smoother.update(self.0);
+
+        Self(smoother.0)
     }
 }
 

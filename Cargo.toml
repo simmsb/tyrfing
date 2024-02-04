@@ -7,7 +7,7 @@ edition = "2021"
 
 [features]
 default = ["time_u32"]
-logging = []
+logging = ["dep:ufmt"]
 time_u32 = []
 
 [dependencies]
@@ -30,6 +30,7 @@ futures-util = { version = "0.3.30", default-features = false, features = ["port
 portable-atomic = { version = "1.6.0", default-features = false, features = ["unsafe-assume-single-core"] }
 atxtiny-hal = "*"
 fugit = { version = "0.3.7", default-features = false }
+ufmt = { version = "0.2.0", optional = true }
 
 [dependencies.avr-hal-generic]
 git = "https://github.com/rahix/avr-hal.git"

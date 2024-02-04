@@ -274,6 +274,16 @@ async fn suck_events() {
     }
 }
 
+pub struct Smoother(pub u16);
+
+impl Smoother {
+    fn update(&mut self, value: u16) {
+        let diff = (value / 8) as i16 - (self.0 / 8) as i16;
+
+        self.0 = self.0.saturating_add_signed(diff);
+    }
+}
+
 #[embassy_executor::task]
 async fn watchdock_tickler(
     mut wd: WatchdogTimer,
@@ -283,18 +293,29 @@ async fn watchdock_tickler(
     let mut p = p.into_push_pull_output();
     p.set_high().unwrap_infallible();
 
+    let mut temp_smoother = Smoother(1970); // 18 c
+    let mut volt_smoother = Smoother(1180); // 5.2v (?)
+
     loop {
         let mut adc_ = adc.enable();
         adc_.run_in_standby(true);
 
-        let r = with_sleep_mode!(SleepMode::Standby, adc_.read_temp().await);
-        let v = with_sleep_mode!(SleepMode::Standby, adc_.read_voltage().await);
+        let r = with_sleep_mode!(SleepMode::Standby, adc_.read_temp().await)
+            .smooth_with(&mut temp_smoother);
+        let v = with_sleep_mode!(SleepMode::Standby, adc_.read_voltage().await)
+            .smooth_with(&mut volt_smoother);
 
         adc = adc_.disable();
         wd.feed();
 
         #[cfg(feature = "logging")]
-        serial_println!("Temp: {}, Volts: {}|||", r.celcius(), v.volts_times_100());
+        serial_println!(
+            "Temp: {} ({}), Volts: {} ({})|||",
+            r.celcius(),
+            r.0,
+            v.volts_times_100(),
+            v.0
+        );
 
         p.toggle().unwrap_infallible();
 
