@@ -7,6 +7,7 @@ edition = "2021"
 
 [features]
 default = ["time_u32"]
+logging = []
 time_u32 = []
 
 [dependencies]

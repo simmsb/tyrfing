@@ -2,7 +2,7 @@ use embassy_time::Duration;
 
 use crate::{BUTTON_EVENTS, with_timeout};
 
-async fn set_output(level: u16) {}
+async fn set_output(level: u8) {}
 
 pub async fn on_ramping() {
     let mut level = 0;

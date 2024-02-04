@@ -17,19 +17,57 @@ use atxtiny_hal::slpctrl::SleepMode;
 use atxtiny_hal::vref::ReferenceVoltage;
 use atxtiny_hal::vref::VrefExt;
 use atxtiny_hal::watchdog::WatchdogTimer;
+use avr_device::attiny1616::ADC0;
 use avr_device::attiny1616::SLPCTRL;
-use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
+use avr_hal_generic::prelude::*;
 use core::future::Future;
 use embassy_time::Duration;
 use embassy_time::Instant;
 use fugit::Rate;
 use futures_util::pin_mut;
-use futures_util::FutureExt;
 
+#[cfg(feature = "logging")]
+use atxtiny_hal::{
+    gpio::{Output, Porta, Stateless},
+    serial::Serial,
+};
+#[cfg(feature = "logging")]
+use avr_device::attiny1616::USART0;
+#[cfg(feature = "logging")]
+use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, mutex::Mutex};
+
+pub mod adc;
 pub mod gpio;
 pub mod peripheral_ref;
 pub mod states;
 pub mod time;
+
+use adc::AdcExt as _;
+
+#[cfg(feature = "logging")]
+pub static SERIAL: Mutex<
+    ThreadModeRawMutex,
+    Option<
+        Serial<
+            USART0,
+            atxtiny_hal::serial::UartPinset<
+                USART0,
+                atxtiny_hal::gpio::Pin<Porta, atxtiny_hal::gpio::U<2>, Input>,
+                atxtiny_hal::gpio::Pin<Porta, atxtiny_hal::gpio::U<1>, Output<Stateless>>,
+            >,
+        >,
+    >,
+> = Mutex::new(None);
+
+#[cfg(feature = "logging")]
+macro_rules! serial_println {
+    ($($arg:tt)*) => {{
+        let mut s = crate::SERIAL.lock().await;
+        if let Some(w) = s.as_mut() {
+            let _ = ::ufmt::uwriteln!(w, $($arg)*);
+        }
+    }}
+}
 
 #[export_name = "__sleep"]
 unsafe fn sleep() {
@@ -38,16 +76,14 @@ unsafe fn sleep() {
     SLPCTRL::steal().ctrla().modify(|_, w| w.sen().clear_bit());
 }
 
-pub async fn with_sleep_mode<F, Fut>(mode: SleepMode, f: F) -> Fut::Output
-where
-    F: FnOnce() -> Fut,
-    Fut: Future,
-{
-    let current = get_sleep_mode();
-    set_sleep_mode(mode);
-    let result = f().await;
-    set_sleep_mode(current);
-    result
+macro_rules! with_sleep_mode {
+    ($mode:expr, $e:expr) => {{
+        let current = crate::get_sleep_mode();
+        crate::set_sleep_mode($mode);
+        let result = $e;
+        crate::set_sleep_mode(current);
+        result
+    }};
 }
 
 pub fn get_sleep_mode() -> SleepMode {
@@ -239,26 +275,28 @@ async fn suck_events() {
 }
 
 #[embassy_executor::task]
-async fn lol(p: atxtiny_hal::gpio::PC0<Input>) {
+async fn watchdock_tickler(
+    mut wd: WatchdogTimer,
+    p: atxtiny_hal::gpio::PC0<Input>,
+    mut adc: adc::Adc<ADC0, adc::Disabled>,
+) {
     let mut p = p.into_push_pull_output();
-    p.toggle().unwrap_infallible();
-    loop {
-        // with_sleep_mode(SleepMode::Idle, || async {
-        //     embassy_time::Timer::after_millis(100).await;
-        // }).await;
+    p.set_high().unwrap_infallible();
 
-        embassy_time::Timer::after_millis(500).await;
-        // t.wait(Edge::Rising).await;
-        p.toggle().unwrap_infallible();
-        // t.wait(Edge::Falling).await;
-    }
-}
-
-#[embassy_executor::task]
-async fn watchdock_tickler(mut wd: WatchdogTimer) {
-    // This should also do ADC stuff
     loop {
+        let mut adc_ = adc.enable();
+        adc_.run_in_standby(true);
+
+        let r = with_sleep_mode!(SleepMode::Standby, adc_.read_temp().await);
+        let v = with_sleep_mode!(SleepMode::Standby, adc_.read_voltage().await);
+
+        adc = adc_.disable();
         wd.feed();
+
+        #[cfg(feature = "logging")]
+        serial_println!("Temp: {}, Volts: {}|||", r.celcius(), v.volts_times_100());
+
+        p.toggle().unwrap_infallible();
 
         embassy_time::Timer::after_millis(500).await;
     }
@@ -268,7 +306,9 @@ async fn watchdock_tickler(mut wd: WatchdogTimer) {
 async fn main(spawner: embassy_executor::Spawner) {
     let dp = pac::Peripherals::take().unwrap();
     let clkctrl = dp.CLKCTRL.constrain();
-    let _portmux = dp.PORTMUX.constrain();
+    #[allow(unused)]
+    let portmux = dp.PORTMUX.constrain();
+    #[allow(unused)]
     let clocks = clkctrl
         .per_clk_freq(Rate::<u32, _, _>::MHz(20u32) / 10)
         .freeze();
@@ -282,9 +322,6 @@ async fn main(spawner: embassy_executor::Spawner) {
     let a = dp.PORTA.split();
     let b = dp.PORTB.split();
     let c = dp.PORTC.split();
-
-    // let mut pin = c.pc0.into_push_pull_output();
-    // let _ = pin.set_high();
 
     time::init_system_time(dp.RTC, None);
 
@@ -302,16 +339,22 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     vref.dac0(ReferenceVoltage::_1V50);
 
-    // embassy_time::Timer::after_secs(3).await;
+    let adc = dp.ADC0.constrain(vref.adc0(ReferenceVoltage::_1V10));
+
+    #[cfg(feature = "logging")]
+    {
+        let pinset = (a.pa2.into_peripheral::<USART0>(), a.pa1.into_peripheral()).mux(&portmux);
+        let usart = atxtiny_hal::serial::Serial::new(dp.USART0, pinset, 115200u32.bps(), clocks);
+        *SERIAL.lock().await = Some(usart);
+    }
 
     let mut watchdog = dp.WDT.constrain();
-    watchdog.start(WatchdogTimeout::S1);
+    watchdog.start(WatchdogTimeout::S4);
     watchdog.lock();
 
-    spawner.must_spawn(watchdock_tickler(watchdog));
+    spawner.must_spawn(watchdock_tickler(watchdog, c.pc0, adc));
 
     spawner.must_spawn(event_generator(b.pb2));
-    spawner.must_spawn(lol(c.pc0));
     spawner.must_spawn(suck_events());
 
     set_sleep_mode(SleepMode::PowerDown);

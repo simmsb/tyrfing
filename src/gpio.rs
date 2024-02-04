@@ -38,15 +38,16 @@ impl<T: GpioRegExt> GpioInt for T {
     }
 
     fn clear(&self, n: u8) {
+        // enabling input buffering disables the interrupt
         self.enable_input_buffer(n);
+        self.clear_interrupt_pending(n);
     }
 }
 
 fn int_handler(gpio: &dyn GpioInt, port: u8, pin_count: u8) {
     for i in 0..pin_count {
-        let w = get_waker(port, i);
         if gpio.is_pending(i) {
-            w.wake();
+            get_waker(port, i).wake();
             gpio.clear(i);
         }
     }
@@ -66,11 +67,6 @@ unsafe fn PORTB_PORT() {
 unsafe fn PORTC_PORT() {
     int_handler(&*PORTC::PTR as &dyn GpioInt, 2, PORTC_PIN_COUNT as u8);
 }
-
-// TODO: potentially make this generic in gpio and pin
-//
-// if we use multiple instances we'll be throwing away space, but if there's
-// only one then we should save a bit of code
 
 pub struct Pin<Gpio, Index, Mode: 'static>(atxtiny_hal::gpio::Pin<Gpio, Index, Mode>);
 
