@@ -8,7 +8,7 @@ use atxtiny_hal::{
         Counter,
     },
 };
-use avr_device::attiny1616::{rtc::pitctrla::PERIOD_A, RTC};
+use avr_device::{attiny1616::{rtc::pitctrla::PERIOD_A, RTC}, interrupt::CriticalSection};
 /// embassy_time implementation for avr
 ///
 /// configure using feature flags
@@ -62,6 +62,19 @@ struct Alarm {
     ctx: *mut (),
 }
 
+static mut IN_PROGRESS: bool = false;
+
+pub fn mark_in_progress(_: CriticalSection) -> bool {
+    unsafe { !core::ptr::replace(core::ptr::addr_of_mut!(IN_PROGRESS), true) }
+}
+
+pub fn mark_finished(_: CriticalSection) {
+    unsafe {
+        IN_PROGRESS = false;
+    }
+}
+
+
 mod timer_queue {
     use avr_device::interrupt::CriticalSection;
 
@@ -73,7 +86,6 @@ mod timer_queue {
         ctx: core::ptr::null_mut(),
     };
 
-    static mut IN_PROGRESS: bool = false;
     static mut TAKEN: [bool; QUEUE_SIZE] = [false; QUEUE_SIZE];
     static mut ATS: [Time; QUEUE_SIZE] = [0; QUEUE_SIZE];
     static mut ALARMS: [Alarm; QUEUE_SIZE] = [EMPTY_ALARM; QUEUE_SIZE];
@@ -88,16 +100,6 @@ mod timer_queue {
             }
 
             None
-        }
-    }
-
-    pub fn mark_in_progress(_: CriticalSection) -> bool {
-        unsafe { !core::mem::replace(&mut IN_PROGRESS, true) }
-    }
-
-    pub fn mark_finished(_: CriticalSection) {
-        unsafe {
-            IN_PROGRESS = false;
         }
     }
 
@@ -134,7 +136,6 @@ mod wake_queue {
 
     use super::{NonMaxU8, Time, QUEUE_SIZE};
 
-    static mut IN_PROGRESS: bool = false;
     static mut TAKEN: [bool; QUEUE_SIZE] = [false; QUEUE_SIZE];
     static mut ATS: [Time; QUEUE_SIZE] = [0; QUEUE_SIZE];
     const X: Option<Waker> = None;
@@ -150,16 +151,6 @@ mod wake_queue {
             }
 
             None
-        }
-    }
-
-    pub fn mark_in_progress(_: CriticalSection) -> bool {
-        unsafe { !core::mem::replace(&mut IN_PROGRESS, true) }
-    }
-
-    pub fn mark_finished(_: CriticalSection) {
-        unsafe {
-            IN_PROGRESS = false;
         }
     }
 
@@ -253,26 +244,22 @@ static mut INTERRUPT_STATE: MaybeUninit<InterruptState> = MaybeUninit::uninit();
 pub unsafe fn handle_tick() {
     let state = unsafe { &mut *INTERRUPT_STATE.as_mut_ptr() };
     let _ = state.led.as_mut().map(|p| p.set_low());
-    let (should_process_timers, should_process_wake, ticks_elapsed) =
+    let (should_process, ticks_elapsed) =
         avr_device::interrupt::free(|t| {
             TICKS_ELAPSED += TICKS_PER_COUNT;
             (
-                timer_queue::mark_in_progress(t),
-                wake_queue::mark_in_progress(t),
+                mark_in_progress(t),
                 TICKS_ELAPSED,
             )
         });
 
-    if should_process_timers {
+    if should_process {
         timer_queue::process(ticks_elapsed);
-    }
-    if should_process_wake {
         wake_queue::process(ticks_elapsed);
     }
 
     avr_device::interrupt::free(|t| {
-        timer_queue::mark_finished(t);
-        wake_queue::mark_finished(t);
+        mark_finished(t);
     });
     state.counter.clear_interrupt();
     let _ = state.led.as_mut().map(|p| p.set_high());
