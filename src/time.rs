@@ -1,41 +1,16 @@
 use atxtiny_hal::{
-    clkctrl::Clocks,
     embedded_hal::digital::OutputPin,
     gpio::{Output, Pin, Portc, Stateful},
-    timer::{
-        rtc::{Pit, RTCClockSource},
-        tcb::{self, TCBClockSource},
-        Counter,
-    },
+    timer::rtc::{Pit, RTCClockSource},
 };
-use avr_device::{attiny1616::{rtc::pitctrla::PERIOD_A, RTC}, interrupt::CriticalSection};
-/// embassy_time implementation for avr
-///
-/// configure using feature flags
-///
-/// adjust QUEUE_SIZE so you don't run out of stack
-///
-/// adjust resolution if timer can't keep up,
-/// this is because timer interrupt doesn't finish fast enough
-///
-///
-/// TODO: allow configuration from env
-///
-/// use macro to define interrupt
-/// ```rust
-/// define_interrupt!(atmega328p)
-/// ```
-///
-/// you need to initialize timer as well
-/// ```rust
-/// init_system_time(&mut dp.TC0);
-/// ```
-/// note you **must** initialize timer before using embassy_time
+use avr_device::{
+    attiny1616::{rtc::pitctrla::PERIOD_A, RTC},
+    interrupt::CriticalSection,
+};
 use core::{mem::MaybeUninit, task::Waker};
 use embassy_time_driver::{AlarmHandle, Driver};
 use embassy_time_queue_driver::TimerQueue;
 use env_int::env_int;
-use fugit::TimerDurationU32;
 
 #[cfg(feature = "time_u32")]
 pub type Time = u32;
@@ -73,7 +48,6 @@ pub fn mark_finished(_: CriticalSection) {
         IN_PROGRESS = false;
     }
 }
-
 
 mod timer_queue {
     use avr_device::interrupt::CriticalSection;
@@ -244,14 +218,11 @@ static mut INTERRUPT_STATE: MaybeUninit<InterruptState> = MaybeUninit::uninit();
 pub unsafe fn handle_tick() {
     let state = unsafe { &mut *INTERRUPT_STATE.as_mut_ptr() };
     let _ = state.led.as_mut().map(|p| p.set_low());
-    let (should_process, ticks_elapsed) =
-        avr_device::interrupt::free(|t| {
-            TICKS_ELAPSED += TICKS_PER_COUNT;
-            (
-                mark_in_progress(t),
-                TICKS_ELAPSED,
-            )
-        });
+    let (should_process, ticks_elapsed) = avr_device::interrupt::free(|t| {
+        let elapsed = TICKS_ELAPSED + TICKS_PER_COUNT;
+        TICKS_ELAPSED = elapsed;
+        (mark_in_progress(t), elapsed)
+    });
 
     if should_process {
         timer_queue::process(ticks_elapsed);
