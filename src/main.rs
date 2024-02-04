@@ -19,16 +19,17 @@ use atxtiny_hal::vref::VrefExt;
 use atxtiny_hal::watchdog::WatchdogTimer;
 use avr_device::attiny1616::SLPCTRL;
 use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
-use futures_util::pin_mut;
 use core::future::Future;
 use embassy_time::Duration;
 use embassy_time::Instant;
 use fugit::Rate;
+use futures_util::pin_mut;
+use futures_util::FutureExt;
 
 pub mod gpio;
 pub mod peripheral_ref;
-pub mod time;
 pub mod states;
+pub mod time;
 
 #[export_name = "__sleep"]
 unsafe fn sleep() {
@@ -69,17 +70,38 @@ pub fn set_sleep_mode(mode: SleepMode) {
     }
 }
 
+struct WithTimeout<F> {
+    timer: embassy_time::Timer,
+    fut: F,
+}
 
-// embassy_futures::select is more efficient the futures_util select that embassy_time uses
-pub async fn with_timeout<F: Future>(timeout: Duration, fut: F) -> Result<F::Output, ()> {
-    let timeout_fut = embassy_time::Timer::after(timeout);
-    pin_mut!(fut);
-    match embassy_futures::select::select(fut, timeout_fut).await {
-        embassy_futures::select::Either::First(r) => Ok(r),
-        embassy_futures::select::Either::Second(_) => Err(()),
+impl<F: Future> Future for WithTimeout<F> {
+    type Output = Result<F::Output, ()>;
+
+    fn poll(
+        self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        let this = unsafe { self.get_unchecked_mut() };
+        let a = unsafe { core::pin::Pin::new_unchecked(&mut this.timer) };
+        let b = unsafe { core::pin::Pin::new_unchecked(&mut this.fut) };
+        if let core::task::Poll::Ready(x) = b.poll(cx) {
+            return core::task::Poll::Ready(Ok(x));
+        }
+        if let core::task::Poll::Ready(x) = a.poll(cx) {
+            return core::task::Poll::Ready(Err(()));
+        }
+        core::task::Poll::Pending
     }
 }
 
+pub fn with_timeout<F: Future>(
+    timeout: Duration,
+    fut: F,
+) -> impl Future<Output = Result<F::Output, ()>> {
+    let timer = embassy_time::Timer::after(timeout);
+    WithTimeout { timer, fut }
+}
 
 pub enum ButtonEvent {
     Click1,
@@ -143,7 +165,8 @@ enum EventGenState {
 // looks bad becasue we have to reuse the same code for as much of the awaits as
 // possible
 #[embassy_executor::task]
-async fn event_generator(mut t: gpio::Pin<Input>) {
+async fn event_generator(t: atxtiny_hal::gpio::PB2<Input>) {
+    let mut t = gpio::Pin::new(t.into_pull_up_input());
     let mut state = EventGenState::FirstClick;
 
     loop {
@@ -155,12 +178,15 @@ async fn event_generator(mut t: gpio::Pin<Input>) {
         };
 
         let now = Instant::now();
+
+        let wait_f = t.wait(wait_for);
+        pin_mut!(wait_f);
+        let wait_f = wait_f as core::pin::Pin<&mut dyn Future<Output = ()>>;
+
         let r = if let Some(wait_until) = wait_until {
-            with_timeout(wait_until, t.wait(wait_for))
-                .await
-                .is_ok()
+            with_timeout(wait_until, wait_f).await.is_ok()
         } else {
-            t.wait(wait_for).await;
+            wait_f.await;
             true
         };
 
@@ -284,9 +310,7 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     spawner.must_spawn(watchdock_tickler(watchdog));
 
-    spawner.must_spawn(event_generator(gpio::Pin::new(
-        b.pb2.downgrade().downgrade(),
-    )));
+    spawner.must_spawn(event_generator(b.pb2));
     spawner.must_spawn(lol(c.pc0));
     spawner.must_spawn(suck_events());
 

@@ -67,29 +67,30 @@ unsafe fn PORTC_PORT() {
     int_handler(&*PORTC::PTR as &dyn GpioInt, 2, PORTC_PIN_COUNT as u8);
 }
 
-
 // TODO: potentially make this generic in gpio and pin
 //
 // if we use multiple instances we'll be throwing away space, but if there's
 // only one then we should save a bit of code
 
-pub struct Pin<Mode: 'static>(PXx<Mode>);
+pub struct Pin<Gpio, Index, Mode: 'static>(atxtiny_hal::gpio::Pin<Gpio, Index, Mode>);
 
-impl<Mode> Peripheral for Pin<Mode> {
-    type P = Pin<Mode>;
+impl<Gpio, Index, Mode> Peripheral for Pin<Gpio, Index, Mode> {
+    type P = Pin<Gpio, Index, Mode>;
 
     unsafe fn clone_unchecked(&self) -> Self::P {
         core::mem::transmute_copy(self)
     }
 }
 
-impl<Mode> Pin<Mode> {
-    pub fn new(p: PXx<Mode>) -> Self {
+impl<Gpio, Index, Mode> Pin<Gpio, Index, Mode> {
+    pub fn new(p: atxtiny_hal::gpio::Pin<Gpio, Index, Mode>) -> Self {
         Self(p)
     }
 }
 
-impl Pin<Input> {
+impl<Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::Index>
+    Pin<Gpio, Index, Input>
+{
     pub async fn wait(&mut self, edge: Edge) {
         let is_high = self.0.is_high().unwrap_infallible();
         if match edge {
@@ -113,13 +114,15 @@ impl Pin<Input> {
     }
 }
 
-struct InputFuture<'d> {
-    pin: PeripheralRef<'d, Pin<Input>>,
+struct InputFuture<'d, Gpio, Index> {
+    pin: PeripheralRef<'d, Pin<Gpio, Index, Input>>,
     // waker: &'static AtomicWaker,
 }
 
-impl<'d> InputFuture<'d> {
-    fn new(mut pin: PeripheralRef<'d, Pin<Input>>, edge: Edge) -> Self {
+impl<'d, Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::Index>
+    InputFuture<'d, Gpio, Index>
+{
+    fn new(mut pin: PeripheralRef<'d, Pin<Gpio, Index, Input>>, edge: Edge) -> Self {
         pin.0.clear_interrupt();
 
         pin.0.configure_interrupt(edge);
@@ -128,7 +131,9 @@ impl<'d> InputFuture<'d> {
     }
 }
 
-impl<'d> Future for InputFuture<'d> {
+impl<'d, Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::Index> Future
+    for InputFuture<'d, Gpio, Index>
+{
     type Output = ();
 
     fn poll(
