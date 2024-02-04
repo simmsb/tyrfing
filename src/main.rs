@@ -13,10 +13,10 @@ use atxtiny_hal::gpio::Edge;
 use atxtiny_hal::gpio::Input;
 use atxtiny_hal::pac;
 use atxtiny_hal::prelude::*;
-use atxtiny_hal::slpctrl::SleepMode;
 use atxtiny_hal::vref::ReferenceVoltage;
 use atxtiny_hal::vref::VrefExt;
 use atxtiny_hal::watchdog::WatchdogTimer;
+use avr_device::attiny1616::slpctrl::ctrla::SMODE_A;
 use avr_device::attiny1616::ADC0;
 use avr_device::attiny1616::SLPCTRL;
 use avr_hal_generic::prelude::*;
@@ -41,6 +41,7 @@ pub mod gpio;
 pub mod peripheral_ref;
 pub mod states;
 pub mod time;
+pub mod with_timeout;
 
 use adc::AdcExt as _;
 
@@ -86,7 +87,7 @@ macro_rules! with_sleep_mode {
     }};
 }
 
-pub fn get_sleep_mode() -> SleepMode {
+pub fn get_sleep_mode() -> SMODE_A {
     unsafe {
         SLPCTRL::steal()
             .ctrla()
@@ -94,49 +95,15 @@ pub fn get_sleep_mode() -> SleepMode {
             .smode()
             .variant()
             .unwrap_unchecked()
-            .into()
     }
 }
 
-pub fn set_sleep_mode(mode: SleepMode) {
+pub fn set_sleep_mode(mode: SMODE_A) {
     unsafe {
         SLPCTRL::steal()
             .ctrla()
-            .modify(|_, w| w.smode().variant(mode.into()));
+            .modify(|_, w| w.smode().variant(mode));
     }
-}
-
-struct WithTimeout<F> {
-    timer: embassy_time::Timer,
-    fut: F,
-}
-
-impl<F: Future> Future for WithTimeout<F> {
-    type Output = Result<F::Output, ()>;
-
-    fn poll(
-        self: core::pin::Pin<&mut Self>,
-        cx: &mut core::task::Context<'_>,
-    ) -> core::task::Poll<Self::Output> {
-        let this = unsafe { self.get_unchecked_mut() };
-        let a = unsafe { core::pin::Pin::new_unchecked(&mut this.timer) };
-        let b = unsafe { core::pin::Pin::new_unchecked(&mut this.fut) };
-        if let core::task::Poll::Ready(x) = b.poll(cx) {
-            return core::task::Poll::Ready(Ok(x));
-        }
-        if let core::task::Poll::Ready(x) = a.poll(cx) {
-            return core::task::Poll::Ready(Err(()));
-        }
-        core::task::Poll::Pending
-    }
-}
-
-pub fn with_timeout<F: Future>(
-    timeout: Duration,
-    fut: F,
-) -> impl Future<Output = Result<F::Output, ()>> {
-    let timer = embassy_time::Timer::after(timeout);
-    WithTimeout { timer, fut }
 }
 
 pub enum ButtonEvent {
@@ -219,12 +186,7 @@ async fn event_generator(t: atxtiny_hal::gpio::PB2<Input>) {
         pin_mut!(wait_f);
         let wait_f = wait_f as core::pin::Pin<&mut dyn Future<Output = ()>>;
 
-        let r = if let Some(wait_until) = wait_until {
-            with_timeout(wait_until, wait_f).await.is_ok()
-        } else {
-            wait_f.await;
-            true
-        };
+        let r = with_timeout::with_timeout(wait_until, wait_f).await.is_ok();
 
         let (state_, evt) = match state {
             EventGenState::FirstClick => (EventGenState::ForLow { clicks: 1 }, None),
@@ -294,16 +256,18 @@ async fn watchdock_tickler(
     p.set_high().unwrap_infallible();
 
     let mut temp_smoother = Smoother(1970); // 18 c
-    let mut volt_smoother = Smoother(1180); // 5.2v (?)
+    let mut volt_smoother = Smoother(1380); // 5.2v (?)
 
     loop {
         let mut adc_ = adc.enable();
         adc_.run_in_standby(true);
 
-        let r = with_sleep_mode!(SleepMode::Standby, adc_.read_temp().await)
-            .smooth_with(&mut temp_smoother);
-        let v = with_sleep_mode!(SleepMode::Standby, adc_.read_voltage().await)
-            .smooth_with(&mut volt_smoother);
+        let (t, v) = with_sleep_mode!(SMODE_A::STANDBY, {
+            let t = adc_.read_temp().await.smooth_with(&mut temp_smoother);
+            let v = adc_.read_voltage().await.smooth_with(&mut volt_smoother);
+
+            (t, v)
+        });
 
         adc = adc_.disable();
         wd.feed();
@@ -311,8 +275,8 @@ async fn watchdock_tickler(
         #[cfg(feature = "logging")]
         serial_println!(
             "Temp: {} ({}), Volts: {} ({})|||",
-            r.celcius(),
-            r.0,
+            t.celcius(),
+            t.0,
             v.volts_times_100(),
             v.0
         );
@@ -378,7 +342,7 @@ async fn main(spawner: embassy_executor::Spawner) {
     spawner.must_spawn(event_generator(b.pb2));
     spawner.must_spawn(suck_events());
 
-    set_sleep_mode(SleepMode::PowerDown);
+    set_sleep_mode(SMODE_A::PDOWN);
 }
 
 #[panic_handler]
