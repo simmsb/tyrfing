@@ -1,6 +1,6 @@
 use embassy_time::Duration;
 
-use crate::{with_timeout::with_timeout, BUTTON_EVENTS};
+use crate::{events::BUTTON_EVENTS, with_timeout::with_timeout};
 
 async fn set_output(level: u8) {}
 
@@ -9,14 +9,14 @@ pub async fn on_ramping() {
 
     loop {
         match BUTTON_EVENTS.wait().await {
-            crate::ButtonEvent::Click1 => {
+            crate::events::ButtonEvent::Click1 => {
                 set_output(0).await;
                 return;
             }
-            crate::ButtonEvent::Click2 => {
+            crate::events::ButtonEvent::Click2 => {
                 level = 100;
             }
-            crate::ButtonEvent::Hold1 => loop {
+            crate::events::ButtonEvent::Hold1 => loop {
                 if with_timeout(Some(Duration::from_millis(200)), BUTTON_EVENTS.wait())
                     .await
                     .is_err()
@@ -24,7 +24,7 @@ pub async fn on_ramping() {
                     level += 1;
                 }
             },
-            crate::ButtonEvent::Hold2 => loop {
+            crate::events::ButtonEvent::Hold2 => loop {
                 if with_timeout(Some(Duration::from_millis(200)), BUTTON_EVENTS.wait())
                     .await
                     .is_err()

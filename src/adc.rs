@@ -99,7 +99,7 @@ impl Temperature {
         (self.kelvin_times_64() >> 6) as i16 - 275
     }
 
-    pub fn smooth_with(self, smoother: &mut crate::Smoother) -> Self {
+    pub fn smooth_with(self, smoother: &mut crate::sensing::Smoother) -> Self {
         smoother.update(self.0);
 
         Self(smoother.0)
@@ -122,7 +122,7 @@ impl Voltage {
         r * 2 + r / 2
     }
 
-    pub fn smooth_with(self, smoother: &mut crate::Smoother) -> Self {
+    pub fn smooth_with(self, smoother: &mut crate::sensing::Smoother) -> Self {
         smoother.update(self.0);
 
         Self(smoother.0)
