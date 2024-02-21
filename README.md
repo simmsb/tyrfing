@@ -1,6 +1,11 @@
-# Embassy on an attiny1616
+# Flashlight firmware, written in rust
 
-Flashlight firmware for the lume1-6af (attiny1616)
+This is flashlight firmware for the lume1-6af (attiny1616), written in Rust.
+
+The UI is (read: will be) inspired by the
+[Andúril](https://github.com/ToyKeeper/anduril) firmware
+
+## EMBASSY on an attiny1616
 
 This is some messing around with embassy on AVR (attiny1616)
 
