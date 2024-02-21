@@ -3,6 +3,8 @@
 // TODO: macros for different CPUs which have different peripherals
 // FIXME: move this into the DAC and ADC modules? DAC and AC share the channel though
 
+use core::hint::unreachable_unchecked;
+
 use crate::{pac::VREF, Toggle};
 
 /// Extension trait that constrains the [`VREF`] peripheral
@@ -27,7 +29,7 @@ pub trait VrefExt {
 /// let vref = dp.VREF.constrain();
 /// ```
 pub struct Vref {
-    vref: VREF
+    vref: VREF,
 }
 
 impl VrefExt for VREF {
@@ -53,7 +55,9 @@ macro_rules! impl_reference_voltage {
             #[doc = "Retrieve the reference voltage for the peripheral "]
             #[doc = stringify!($periphname)]
             pub fn $name(&mut self, voltage: $refvolttype) -> $refstruct {
-                self.vref.$refselreg().modify(|_, w| unsafe { w.$refselbits().bits(voltage as u8) });
+                self.vref
+                    .$refselreg()
+                    .modify(|_, w| unsafe { w.$refselbits().bits(voltage as u8) });
                 $structret
             }
         }
@@ -63,17 +67,21 @@ macro_rules! impl_reference_voltage {
         impl $refstruct {
             /// Set the reference voltage to the specified level.
             pub fn voltage(vref: &mut Vref, voltage: $refvolttype) {
-                vref.vref.$refselreg().modify(|_, w| unsafe { w.$refselbits().bits(voltage as u8) });
+                vref.vref
+                    .$refselreg()
+                    .modify(|_, w| unsafe { w.$refselbits().bits(voltage as u8) });
             }
-        
+
             /// Force-enable the reference voltage.
-            /// 
+            ///
             /// Usually the peripherals that use the reference voltage enable it
             /// automatically. Using this method it can be force-enabled.
             pub fn force(vref: &mut Vref, force: impl Into<Toggle>) {
                 let force: Toggle = force.into();
                 let force: bool = force.into();
-                vref.vref.$forceenreg().modify(|_, w| w.$forceenbit().bit(force));
+                vref.vref
+                    .$forceenreg()
+                    .modify(|_, w| w.$forceenbit().bit(force));
             }
         }
     };
@@ -81,6 +89,7 @@ macro_rules! impl_reference_voltage {
 
 /// Reference Voltage.
 #[derive(ufmt::derive::uDebug, Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(u8)]
 pub enum ReferenceVoltage {
     /// 0.55V
     _0V55 = 0x00,
@@ -98,16 +107,43 @@ pub enum ReferenceVoltage {
     _1V50 = 0x04,
 }
 
+impl ReferenceVoltage {
+    pub const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    pub const fn from_bits(value: u8) -> Self {
+        match value {
+            0x00 => Self::_0V55,
+            0x01 => Self::_1V10,
+            0x02 => Self::_2V50,
+            0x03 => Self::_4V34,
+            0x04 => Self::_1V50,
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+}
+
 impl_reference_voltage!(
-    adc0, ADC0, ADCReferenceVoltage, ADCReferenceVoltage<0>,
+    adc0,
+    ADC0,
+    ADCReferenceVoltage,
+    ADCReferenceVoltage<0>,
     ReferenceVoltage,
-    ctrla, adc0refsel,
-    ctrlb, adc0refen
+    ctrla,
+    adc0refsel,
+    ctrlb,
+    adc0refen
 );
 
 impl_reference_voltage!(
-    dac0, DAC0, DACReferenceVoltage, DACReferenceVoltage<0>,
+    dac0,
+    DAC0,
+    DACReferenceVoltage,
+    DACReferenceVoltage<0>,
     ReferenceVoltage,
-    ctrla, dac0refsel,
-    ctrlb, dac0refen
+    ctrla,
+    dac0refsel,
+    ctrlb,
+    dac0refen
 );

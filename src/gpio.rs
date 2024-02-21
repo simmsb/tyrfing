@@ -82,6 +82,10 @@ impl<Gpio, Index, Mode> Pin<Gpio, Index, Mode> {
     pub fn new(p: atxtiny_hal::gpio::Pin<Gpio, Index, Mode>) -> Self {
         Self(p)
     }
+
+    pub fn pin(&mut self) -> &mut atxtiny_hal::gpio::Pin<Gpio, Index, Mode> {
+        &mut self.0
+    }
 }
 
 impl<Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::Index>

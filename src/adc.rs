@@ -79,9 +79,9 @@ impl<INST: AdcRegExt> Adc<INST, Disabled> {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Temperature(pub u16);
+pub struct Temperature<T>(pub T);
 
-impl Temperature {
+impl Temperature<u16> {
     pub fn kelvin_times_64(self) -> u16 {
         let r = self.0 << 4;
         let offset = -((unsafe { SIGROW::steal() }.tempsense1().read().bits() as i8 as i32) << 6);
@@ -95,8 +95,12 @@ impl Temperature {
         r as u16
     }
 
+    pub const fn kelvin_times_64_from_celcius(val: i16) -> Self {
+        Temperature(((val + 275) as u16) * 64)
+    }
+
     pub fn celcius(self) -> i16 {
-        (self.kelvin_times_64() >> 6) as i16 - 275
+        (self.kelvin_times_64() / 64) as i16 - 275
     }
 
     pub fn smooth_with(self, smoother: &mut crate::sensing::Smoother) -> Self {
@@ -106,15 +110,19 @@ impl Temperature {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Voltage(pub u16);
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub struct Voltage<T>(pub T);
 
-impl Voltage {
+impl Voltage<u16> {
     pub fn volts_times_40(self) -> u8 {
         let r = self.0 << 4;
         const NUMERATOR: u32 = (40.0 * 1.5 * 4096.0) as u32;
 
         (NUMERATOR / (r >> 4) as u32) as u8
+    }
+
+    pub const fn volts_to_adc_output(volts: f32) -> Voltage<u16> {
+        Voltage((6144.0 / volts) as u16)
     }
 
     pub fn volts_times_100(self) -> u16 {
@@ -126,6 +134,20 @@ impl Voltage {
         smoother.update(self.0);
 
         Self(smoother.0)
+    }
+}
+
+impl PartialOrd for Voltage<u16> {
+    // volts stores MAX / n, so a larger voltage is represented by a smaller value of n
+
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        core::cmp::Reverse(self.0).partial_cmp(&core::cmp::Reverse(other.0))
+    }
+}
+
+impl Ord for Voltage<u16> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        core::cmp::Reverse(self.0).cmp(&core::cmp::Reverse(other.0))
     }
 }
 
@@ -148,8 +170,8 @@ impl Adc<ADC0, Enabled> {
         AdcFuture::new(self.into_ref())
     }
 
-    pub fn read_voltage(&mut self) -> impl Future<Output = Voltage> + '_ {
-        self.adc.set_initdelay(INITDLY_A::DLY16);
+    pub fn read_voltage(&mut self) -> impl Future<Output = Voltage<u16>> + '_ {
+        self.adc.set_initdelay(INITDLY_A::DLY64);
 
         // steal vref, TODO: rework api so ReferenceVoltage holds a ref to it
         let mut vref = unsafe { VREF::steal() }.constrain();
@@ -165,8 +187,8 @@ impl Adc<ADC0, Enabled> {
         self.read().map(Voltage)
     }
 
-    pub fn read_temp(&mut self) -> impl Future<Output = Temperature> + '_ {
-        self.adc.set_initdelay(INITDLY_A::DLY16);
+    pub fn read_temp(&mut self) -> impl Future<Output = Temperature<u16>> + '_ {
+        self.adc.set_initdelay(INITDLY_A::DLY64);
 
         // steal vref, TODO: rework api so ReferenceVoltage holds a ref to it
         let mut vref = unsafe { VREF::steal() }.constrain();

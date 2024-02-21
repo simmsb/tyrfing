@@ -5,6 +5,16 @@
 #![feature(abi_avr_interrupt)]
 #![feature(rustc_attrs)]
 #![feature(generic_arg_infer)]
+#![feature(const_fn_floating_point_arithmetic)]
+// #![feature(
+//     const_option,
+//     const_mut_refs,
+//     maybe_uninit_uninit_array,
+//     maybe_uninit_array_assume_init,
+//     const_maybe_uninit_array_assume_init,
+//     const_maybe_uninit_uninit_array,
+//     const_maybe_uninit_write
+// )]
 #![allow(internal_features)]
 
 use atxtiny_hal::bod::BodExt;
@@ -16,13 +26,13 @@ use atxtiny_hal::vref::VrefExt;
 use avr_device::attiny1616::slpctrl::ctrla::SMODE_A;
 use fugit::Rate;
 
-#[cfg(feature = "logging")]
-use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, mutex::Mutex};
-
 pub mod adc;
 pub mod events;
 pub mod gpio;
+pub mod logger;
+pub mod nonatomic;
 pub mod peripheral_ref;
+pub mod power;
 pub mod sensing;
 pub mod sleep;
 pub mod states;
@@ -30,32 +40,6 @@ pub mod time;
 pub mod with_timeout;
 
 use adc::AdcExt as _;
-
-#[cfg(feature = "logging")]
-pub static SERIAL: Mutex<
-    ThreadModeRawMutex,
-    Option<
-        atxtiny_hal::serial::Serial<
-            avr_device::attiny1616::USART0,
-            atxtiny_hal::serial::UartPinset<
-                avr_device::attiny1616::USART0,
-                atxtiny_hal::gpio::Pin<atxtiny_hal::gpio::Porta, atxtiny_hal::gpio::U<2>, atxtiny_hal::gpio::Input>,
-                atxtiny_hal::gpio::Pin<atxtiny_hal::gpio::Porta, atxtiny_hal::gpio::U<1>, atxtiny_hal::gpio::Output<atxtiny_hal::gpio::Stateless>>,
-            >,
-        >,
-    >,
-> = Mutex::new(None);
-
-#[cfg(feature = "logging")]
-#[macro_export]
-macro_rules! serial_println {
-    ($($arg:tt)*) => {{
-        let mut s = crate::SERIAL.lock().await;
-        if let Some(w) = s.as_mut() {
-            let _ = ::ufmt::uwriteln!(w, $($arg)*);
-        }
-    }}
-}
 
 #[embassy_executor::task]
 async fn suck_events() {
@@ -87,27 +71,22 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     time::init_system_time(dp.RTC, None);
 
-    //
-    let mut dac_pin = a.pa6.into_stateless_push_pull_output();
-    dac_pin.internal_pull_up(Toggle::Off);
-
     let mut vref = dp.VREF.constrain();
-    let dac0vref = vref.dac0(ReferenceVoltage::_0V55);
-
-    let mut dac = dp.DAC0.constrain(dac0vref);
-    dac.output_pin(dac_pin);
-    dac.dac_set_value(128);
-    let _dac = dac.enable();
-
-    vref.dac0(ReferenceVoltage::_1V50);
 
     let adc = dp.ADC0.constrain(vref.adc0(ReferenceVoltage::_1V10));
 
     #[cfg(feature = "logging")]
     {
-        let pinset = (a.pa2.into_peripheral::<avr_device::attiny1616::USART0>(), a.pa1.into_peripheral()).mux(&portmux);
+        let pinset = (
+            a.pa2.into_peripheral::<avr_device::attiny1616::USART0>(),
+            a.pa1.into_peripheral(),
+        )
+            .mux(&portmux);
         let usart = atxtiny_hal::serial::Serial::new(dp.USART0, pinset, 115200u32.bps(), clocks);
-        *SERIAL.lock().await = Some(usart);
+        avr_device::interrupt::free(|t| {
+            let mut u = logger::SERIAL.borrow(t).borrow_mut();
+            *u = Some(usart);
+        });
     }
 
     let mut watchdog = dp.WDT.constrain();
@@ -116,8 +95,25 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     spawner.must_spawn(sensing::watchdock_tickler(watchdog, c.pc0, adc));
 
-    spawner.must_spawn(events::event_generator(b.pb2));
+    spawner.must_spawn(events::debouncer(c.pc3));
+    spawner.must_spawn(events::event_generator());
     spawner.must_spawn(suck_events());
+
+    let mut dac_pin = a.pa6.into_stateless_push_pull_output();
+    dac_pin.internal_pull_up(Toggle::Off);
+
+    let dac0vref = vref.dac0(ReferenceVoltage::_0V55);
+
+    let mut dac = dp.DAC0.constrain(dac0vref);
+    dac.output_pin(dac_pin);
+    dac.dac_set_value(0);
+    let dac = dac.enable();
+
+    vref.dac0(ReferenceVoltage::_1V50);
+
+    let power_paths =
+        power::PowerPaths::new(dac0vref, dac, a.pa7, b.pb5, b.pb4, b.pb3, b.pb2, b.pb0);
+    spawner.must_spawn(power::power_controller(power_paths));
 
     sleep::set_sleep_mode(SMODE_A::PDOWN);
 }

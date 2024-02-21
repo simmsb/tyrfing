@@ -1,11 +1,15 @@
-use core::future::Future;
-use futures_util::pin_mut;
-use embassy_time::Instant;
-use embassy_time::Duration;
-use atxtiny_hal::gpio::Edge;
-use atxtiny_hal::gpio::Input;
 use atxtiny_hal;
+use atxtiny_hal::embedded_hal::digital::InputPin;
+use atxtiny_hal::embedded_hal::digital::OutputPin;
+use atxtiny_hal::gpio::Edge;
+use atxtiny_hal::gpio::GpioExt;
+use atxtiny_hal::gpio::Input;
+use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
+use core::future::Future;
 use embassy_sync;
+use embassy_time::Duration;
+use embassy_time::Instant;
+use futures_util::pin_mut;
 
 pub enum ButtonEvent {
     Click1,
@@ -58,6 +62,28 @@ pub static BUTTON_EVENTS: embassy_sync::signal::Signal<
     ButtonEvent,
 > = embassy_sync::signal::Signal::new();
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ButtonState {
+    Depress,
+    Press,
+}
+
+impl ButtonState {
+    fn from_bool(v: bool) -> Self {
+        if v {
+            Self::Press
+        } else {
+            Self::Depress
+        }
+    }
+}
+
+pub static BUTTON_STATES: embassy_sync::channel::Channel<
+    embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
+    ButtonState,
+    1,
+> = embassy_sync::channel::Channel::new();
+
 #[derive(Clone, Copy)]
 pub enum EventGenState {
     FirstClick,
@@ -66,30 +92,58 @@ pub enum EventGenState {
     HoldFinish,
 }
 
+#[embassy_executor::task]
+pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
+    let mut t = crate::gpio::Pin::new(t.into_floating_input());
+    let mut l = unsafe {
+        atxtiny_hal::avr_device::attiny1616::PORTB::steal()
+            .split()
+            .pb1
+            .into_push_pull_output()
+    };
+
+    loop {
+        t.wait(Edge::RisingFalling).await;
+        let v = t.pin().is_low().unwrap_infallible();
+        embassy_time::Timer::after_millis(32).await;
+        if t.pin().is_low().unwrap_infallible() == v {
+            // BUTTON_STATES.send(ButtonState::from_bool(v)).await;
+            crate::serial_println!("Got button: {}", v);
+            l.set_state(v.into()).unwrap_infallible();
+            crate::power::set_level_gradual(if v { 255 } else { 0 });
+        }
+    }
+}
+
 // looks bad becasue we have to reuse the same code for as much of the awaits as
 // possible
 #[embassy_executor::task]
-pub async fn event_generator(t: atxtiny_hal::gpio::PB2<Input>) {
-    let mut t = crate::gpio::Pin::new(t.into_pull_up_input());
+pub async fn event_generator() {
     let mut state = EventGenState::FirstClick;
 
     loop {
-        let (wait_until, wait_for) = match state {
-            EventGenState::FirstClick => (None, Edge::Rising),
-            EventGenState::ForHigh { .. } => (Some(Duration::from_millis(300)), Edge::Rising),
-            EventGenState::ForLow { .. } => (Some(Duration::from_millis(300)), Edge::Falling),
-            EventGenState::HoldFinish => (None, Edge::Falling),
+        let (wait_until, expecting) = match state {
+            EventGenState::FirstClick => (None, ButtonState::Press),
+            EventGenState::ForHigh { .. } => (Some(Duration::from_millis(300)), ButtonState::Press),
+            EventGenState::ForLow { .. } => {
+                (Some(Duration::from_millis(300)), ButtonState::Depress)
+            }
+            EventGenState::HoldFinish => (None, ButtonState::Depress),
         };
 
         let now = Instant::now();
 
-        let wait_f = t.wait(wait_for);
+        let wait_f = BUTTON_STATES.receive();
         pin_mut!(wait_f);
-        let wait_f = wait_f as core::pin::Pin<&mut dyn Future<Output = ()>>;
+        let wait_f = wait_f as core::pin::Pin<&mut dyn Future<Output = ButtonState>>;
 
-        let r = crate::with_timeout::with_timeout(wait_until, wait_f)
-            .await
-            .is_ok();
+        let r = crate::with_timeout::with_timeout(wait_until, wait_f).await;
+
+        let r = match r {
+            Ok(state) if state == expecting => true,
+            Ok(_) => break,
+            Err(_) => false,
+        };
 
         let (state_, evt) = match state {
             EventGenState::FirstClick => (EventGenState::ForLow { clicks: 1 }, None),

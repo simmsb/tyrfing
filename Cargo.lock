@@ -59,10 +59,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "avr-progmem"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e93a9dd7da8f4eb57c912367e337687e06a8db6452d8c89eeb9eff1e0d2ba2d"
+dependencies = [
+ "cfg-if 1.0.0",
+ "derivative",
+ "ufmt",
+]
+
+[[package]]
 name = "bare-metal"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fe8f5a8a398345e52358e18ff07cc17a568fbca5c6f73873d3a62056309603"
+
+[[package]]
+name = "bitfield-struct"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a26b8cea8bb6a81b75a84603b9e096f05fa86db057904ef29be1deee900532bd"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
 
 [[package]]
 name = "byteorder"
@@ -124,6 +146,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "derive-syn-parse"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -150,15 +183,19 @@ dependencies = [
  "atxtiny-hal",
  "avr-device",
  "avr-hal-generic",
+ "avr-progmem",
+ "bitfield-struct",
  "embassy-executor",
  "embassy-futures",
  "embassy-sync",
  "embassy-time",
  "embassy-time-driver",
  "embassy-time-queue-driver",
+ "embedded-io",
  "env_int",
  "fugit",
  "futures-util",
+ "paste",
  "portable-atomic",
  "ufmt",
 ]

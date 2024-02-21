@@ -14,6 +14,7 @@ mod private {
         fn enable(&self, enable: bool);
         fn enable_output(&self, enable: bool);
         fn set_value(&self, value: u8);
+        fn run_in_standby(&self, value: bool);
     }
 }
 
@@ -102,6 +103,11 @@ impl<INST: DacRegExt> Dac<INST, Disabled> {
     pub fn dac_set_value(&mut self, value: u8) {
         self.dac.set_value(value);
     }
+
+    #[inline]
+    pub fn run_in_standby(&mut self, value: bool) {
+        self.dac.run_in_standby(value);
+    }
 }
 
 impl<INST: DacRegExt> Dac<INST, Enabled> {
@@ -134,6 +140,11 @@ impl<INST: DacRegExt> Dac<INST, Enabled> {
     #[inline]
     pub fn dac_set_value(&mut self, value: u8) {
         self.dac.set_value(value);
+    }
+
+    #[inline]
+    pub fn run_in_standby(&mut self, value: bool) {
+        self.dac.run_in_standby(value);
     }
 }
 
@@ -174,6 +185,11 @@ impl DacRegExt for DAC0 {
     #[inline]
     fn set_value(&self, value: u8) {
         self.data().write(|w| w.bits(value));
+    }
+
+    #[inline]
+    fn run_in_standby(&self, enable: bool) {
+        self.ctrla().modify(|_, w| w.runstdby().variant(enable))
     }
 }
 

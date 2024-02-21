@@ -2,15 +2,13 @@ use embassy_time::Duration;
 
 use crate::{events::BUTTON_EVENTS, with_timeout::with_timeout};
 
-async fn set_output(level: u8) {}
-
 pub async fn on_ramping() {
     let mut level = 0;
 
     loop {
         match BUTTON_EVENTS.wait().await {
             crate::events::ButtonEvent::Click1 => {
-                set_output(0).await;
+                crate::power::set_level(0);
                 return;
             }
             crate::events::ButtonEvent::Click2 => {
@@ -35,6 +33,9 @@ pub async fn on_ramping() {
             _ => {}
         }
 
-        set_output(level).await;
+        #[cfg(feature = "logging")]
+        crate::serial_println!("Got event");
+
+        crate::power::set_level(level);
     }
 }

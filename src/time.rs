@@ -24,7 +24,7 @@ pub struct AvrTc0EmbassyTimeDriver {}
 #[allow(dead_code)]
 const TICKS_PER_COUNT: Time = 1;
 
-const QUEUE_SIZE: usize = env_int!("AVR_EMBASSY_TIME_QUEUE_SIZE", 4);
+const QUEUE_SIZE: usize = env_int!("AVR_EMBASSY_TIME_QUEUE_SIZE", 8);
 
 #[rustc_layout_scalar_valid_range_start(0)]
 #[rustc_layout_scalar_valid_range_end(254)]
@@ -242,7 +242,7 @@ pub fn init_system_time(tc: RTC, p: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, O
         avr_device::interrupt::free(|_| {
             TICKS_ELAPSED = 0;
 
-            let mut pit = Pit::from_rtc(tc, RTCClockSource::OSCULP32K_1K, PERIOD_A::CYC32);
+            let mut pit = Pit::from_rtc(tc, RTCClockSource::OSCULP32K_1K, PERIOD_A::CYC8);
             pit.enable_interrupt();
             pit.start();
 

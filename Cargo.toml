@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["time_u32"]
+default = ["space_saving", "logging"]
 logging = ["dep:ufmt"]
+space_saving = ["time_u32"]
 time_u32 = []
 
 [dependencies]
@@ -20,7 +21,7 @@ avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-sect
 
 embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], path = "vendor/embassy/embassy-executor" }
 embassy-time = { version = "0.3.0", path = "vendor/embassy/embassy-time" }
-embassy-time-driver = { version = "0.1.0", features = ["tick-hz-32"], path = "vendor/embassy/embassy-time-driver" }
+embassy-time-driver = { version = "0.1.0", features = ["tick-hz-128"], path = "vendor/embassy/embassy-time-driver" }
 embassy-time-queue-driver = { version = "0.1.0", path = "vendor/embassy/embassy-time-queue-driver" }
 embassy-sync = { path = "vendor/embassy/embassy-sync", features = ["turbowakers"] }
 embassy-futures = { path = "vendor/embassy/embassy-futures" }
@@ -31,6 +32,10 @@ portable-atomic = { version = "1.6.0", default-features = false, features = ["un
 atxtiny-hal = "*"
 fugit = { version = "0.3.7", default-features = false }
 ufmt = { version = "0.2.0", optional = true }
+bitfield-struct = "0.5.6"
+avr-progmem = "0.4.0"
+embedded-io = "0.6.1"
+paste = "1.0.14"
 
 [dependencies.avr-hal-generic]
 git = "https://github.com/rahix/avr-hal.git"
