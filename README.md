@@ -2,8 +2,18 @@
 
 This is flashlight firmware for the lume1-6af (attiny1616), written in Rust.
 
+The UI is implemented using async rust, which makes adding new modes of operation fairly trivial.
+
 The UI is (read: will be) inspired by the
 [Andúril](https://github.com/ToyKeeper/anduril) firmware
+
+## Thanks
+
+This project relies on and makes modifications to:
+
+- [Embassy](https://github.com/embassy-rs/embassy)
+- [atxtiny-hal](https://github.com/G33KatWork/atxtiny-hal)
+- [avr-device](https://github.com/Rahix/avr-device)
 
 ## EMBASSY on an attiny1616
 
