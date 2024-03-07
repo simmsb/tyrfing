@@ -4,6 +4,7 @@
 #![feature(type_alias_impl_trait)]
 #![feature(abi_avr_interrupt)]
 #![feature(rustc_attrs)]
+#![feature(inline_const)]
 #![feature(generic_arg_infer)]
 #![feature(const_fn_floating_point_arithmetic)]
 // #![feature(
@@ -21,12 +22,15 @@ use atxtiny_hal::bod::BodExt;
 use atxtiny_hal::dac::DacExt;
 use atxtiny_hal::pac;
 use atxtiny_hal::prelude::*;
+use atxtiny_hal::timer::tca::WaveformGenerationMode;
 use atxtiny_hal::vref::ReferenceVoltage;
 use atxtiny_hal::vref::VrefExt;
 use avr_device::attiny1616::slpctrl::ctrla::SMODE_A;
+use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
 use fugit::Rate;
 
 pub mod adc;
+pub mod aux;
 pub mod events;
 pub mod gpio;
 pub mod logger;
@@ -40,13 +44,6 @@ pub mod time;
 pub mod with_timeout;
 
 use adc::AdcExt as _;
-
-#[embassy_executor::task]
-async fn suck_events() {
-    loop {
-        states::on_ramping().await;
-    }
-}
 
 #[embassy_executor::main]
 async fn main(spawner: embassy_executor::Spawner) {
@@ -93,11 +90,11 @@ async fn main(spawner: embassy_executor::Spawner) {
     watchdog.start(WatchdogTimeout::S4);
     watchdog.lock();
 
-    spawner.must_spawn(sensing::watchdock_tickler(watchdog, c.pc0, adc));
+    spawner.must_spawn(sensing::watchdock_tickler(watchdog, adc));
 
     spawner.must_spawn(events::debouncer(c.pc3));
     spawner.must_spawn(events::event_generator());
-    spawner.must_spawn(suck_events());
+    spawner.must_spawn(states::torch_ui());
 
     let mut dac_pin = a.pa6.into_stateless_push_pull_output();
     dac_pin.internal_pull_up(Toggle::Off);
@@ -111,9 +108,12 @@ async fn main(spawner: embassy_executor::Spawner) {
 
     vref.dac0(ReferenceVoltage::_1V50);
 
-    let power_paths =
-        power::PowerPaths::new(dac0vref, dac, a.pa7, b.pb5, b.pb4, b.pb3, b.pb2, b.pb0);
+    let power_paths = power::PowerPaths::new(dac0vref, dac, a.pa7, b.pb5, b.pb4, b.pb3, b.pb2);
     spawner.must_spawn(power::power_controller(power_paths));
+
+    aux::setup(
+        spawner, dp.TCA0, dp.TCB0, clocks, &portmux, b.pb0, b.pb1, c.pc0,
+    );
 
     sleep::set_sleep_mode(SMODE_A::PDOWN);
 }
@@ -123,5 +123,14 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     // disable interrupts - firmware has panicked so no ISRs should continue running
     avr_device::interrupt::disable();
 
-    loop {}
+    let mut p = unsafe { atxtiny_hal::avr_device::attiny1616::PORTC::steal() }
+        .split()
+        .pc1
+        .into_push_pull_output();
+
+    loop {
+        p.toggle().unwrap_infallible();
+
+        atxtiny_hal::avr_device::asm::delay_cycles(1000000);
+    }
 }

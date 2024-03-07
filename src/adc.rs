@@ -1,4 +1,4 @@
-use core::{marker::PhantomData, task::Poll};
+use core::{marker::PhantomData, ops::Div, task::Poll};
 
 use atxtiny_hal::vref::{ADCReferenceVoltage, ReferenceVoltage, VrefExt};
 use avr_device::attiny1616::{
@@ -114,18 +114,24 @@ impl Temperature<u16> {
 pub struct Voltage<T>(pub T);
 
 impl Voltage<u16> {
-    pub fn volts_times_40(self) -> u8 {
+    pub const fn volts_times_40(self) -> u8 {
         let r = self.0 << 4;
         const NUMERATOR: u32 = (40.0 * 1.5 * 4096.0) as u32;
 
-        (NUMERATOR / (r >> 4) as u32) as u8
+        let n = (r >> 4) as u32;
+
+        if n == 0 {
+            return 0;
+        }
+
+        (NUMERATOR / n) as u8
     }
 
     pub const fn volts_to_adc_output(volts: f32) -> Voltage<u16> {
         Voltage((6144.0 / volts) as u16)
     }
 
-    pub fn volts_times_100(self) -> u16 {
+    pub const fn volts_times_100(self) -> u16 {
         let r = self.volts_times_40() as u16;
         r * 2 + r / 2
     }

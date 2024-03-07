@@ -36,7 +36,9 @@ impl Mug {
 fn caffeinate() {
     let v = COFFEE.fetch_add(1, portable_atomic::Ordering::SeqCst);
     if v == 0 {
-        set_sleep_mode(SMODE_A::STANDBY);
+        // use idle instead of standby, we're never wakelocked for long (only
+        // during ADC measurements) unless the torch is on
+        set_sleep_mode(SMODE_A::IDLE);
     }
 }
 

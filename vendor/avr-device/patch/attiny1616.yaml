@@ -32,6 +32,18 @@ SLPCTRL:
         STANDBY: [1, "Standby Mode"]
         PDOWN: [2, "Power-down Mode"]
 
+TCB0:
+  _add:
+    CCMPL:
+      description: "Compare Capture low bit"
+      addressOffset: 0x0C
+      access: read-write
+    CCMPH:
+      description: "Compare Capture high bit"
+      addressOffset: 0x0D
+      access: read-write
+
+
 TCD0:
   EVCTRL?:
     CFG:

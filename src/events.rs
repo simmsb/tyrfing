@@ -1,6 +1,7 @@
 use atxtiny_hal;
 use atxtiny_hal::embedded_hal::digital::InputPin;
 use atxtiny_hal::embedded_hal::digital::OutputPin;
+use atxtiny_hal::embedded_hal::digital::StatefulOutputPin;
 use atxtiny_hal::gpio::Edge;
 use atxtiny_hal::gpio::GpioExt;
 use atxtiny_hal::gpio::Input;
@@ -78,11 +79,10 @@ impl ButtonState {
     }
 }
 
-pub static BUTTON_STATES: embassy_sync::channel::Channel<
+pub static BUTTON_STATES: embassy_sync::signal::Signal<
     embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
     ButtonState,
-    1,
-> = embassy_sync::channel::Channel::new();
+> = embassy_sync::signal::Signal::new();
 
 #[derive(Clone, Copy)]
 pub enum EventGenState {
@@ -96,21 +96,53 @@ pub enum EventGenState {
 pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
     let mut t = crate::gpio::Pin::new(t.into_floating_input());
     let mut l = unsafe {
-        atxtiny_hal::avr_device::attiny1616::PORTB::steal()
+        atxtiny_hal::avr_device::attiny1616::PORTC::steal()
             .split()
-            .pb1
+            .pc1
             .into_push_pull_output()
     };
 
     loop {
-        t.wait(Edge::RisingFalling).await;
+        l.set_low().unwrap_infallible();
+
+        // wait for a pin event on the button pin (either a press, or bouncing)
+        t.wait(Edge::Falling).await;
         let v = t.pin().is_low().unwrap_infallible();
-        embassy_time::Timer::after_millis(32).await;
-        if t.pin().is_low().unwrap_infallible() == v {
-            // BUTTON_STATES.send(ButtonState::from_bool(v)).await;
+
+        // if the button isn't pressed, abort
+        if !v {
+            continue;
+        }
+
+        embassy_time::Timer::after_millis(16).await;
+
+        // if the button is still pressed after 16ms, consider it debounced and pressed
+        if t.pin().is_low().unwrap_infallible() {
+            BUTTON_STATES.signal(ButtonState::Press);
             crate::serial_println!("Got button: {}", v);
-            l.set_state(v.into()).unwrap_infallible();
-            crate::power::set_level_gradual(if v { 255 } else { 0 });
+            // crate::power::set_level_gradual(if v { 255 } else { 0 });
+        } else {
+            continue;
+        }
+        l.set_high().unwrap_infallible();
+
+        // once pressed, we poll the button for depresses since sometimes the
+        // edge interrupt can be missed
+        loop {
+            embassy_time::Timer::after_millis(16).await;
+            // if the button is still pressed, do nothing
+            if t.pin().is_low().unwrap_infallible() {
+                continue;
+            }
+
+            embassy_time::Timer::after_millis(16).await;
+
+            // if the button has been depressed for two cycles, consider it
+            // debounced and depressed
+            if t.pin().is_high().unwrap_infallible() {
+                BUTTON_STATES.signal(ButtonState::Depress);
+                break;
+            }
         }
     }
 }
@@ -120,7 +152,6 @@ pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
 #[embassy_executor::task]
 pub async fn event_generator() {
     let mut state = EventGenState::FirstClick;
-
     loop {
         let (wait_until, expecting) = match state {
             EventGenState::FirstClick => (None, ButtonState::Press),
@@ -131,25 +162,24 @@ pub async fn event_generator() {
             EventGenState::HoldFinish => (None, ButtonState::Depress),
         };
 
-        let now = Instant::now();
-
-        let wait_f = BUTTON_STATES.receive();
-        pin_mut!(wait_f);
-        let wait_f = wait_f as core::pin::Pin<&mut dyn Future<Output = ButtonState>>;
-
-        let r = crate::with_timeout::with_timeout(wait_until, wait_f).await;
+        let r = crate::with_timeout::with_timeout(wait_until, BUTTON_STATES.wait()).await;
 
         let r = match r {
             Ok(state) if state == expecting => true,
-            Ok(_) => break,
+            Ok(_) => {
+                state = EventGenState::FirstClick;
+                continue;
+            }
             Err(_) => false,
         };
+
+        // r: true if pressed, false if held
 
         let (state_, evt) = match state {
             EventGenState::FirstClick => (EventGenState::ForLow { clicks: 1 }, None),
             EventGenState::ForHigh { clicks } => {
                 if r {
-                    (EventGenState::ForLow { clicks }, None)
+                    (EventGenState::ForLow { clicks: clicks + 1 }, None)
                 } else {
                     (
                         EventGenState::FirstClick,
@@ -159,17 +189,7 @@ pub async fn event_generator() {
             }
             EventGenState::ForLow { clicks } => {
                 if r {
-                    (
-                        EventGenState::ForHigh {
-                            clicks: clicks
-                                + if now.elapsed() > Duration::from_millis(10) {
-                                    1
-                                } else {
-                                    0
-                                },
-                        },
-                        None,
-                    )
+                    (EventGenState::ForHigh { clicks }, None)
                 } else {
                     (
                         EventGenState::HoldFinish,

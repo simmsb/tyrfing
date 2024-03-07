@@ -24,7 +24,7 @@ pub struct AvrTc0EmbassyTimeDriver {}
 #[allow(dead_code)]
 const TICKS_PER_COUNT: Time = 1;
 
-const QUEUE_SIZE: usize = env_int!("AVR_EMBASSY_TIME_QUEUE_SIZE", 8);
+const QUEUE_SIZE: usize = 10;
 
 #[rustc_layout_scalar_valid_range_start(0)]
 #[rustc_layout_scalar_valid_range_end(254)]
@@ -115,8 +115,13 @@ mod wake_queue {
     const X: Option<Waker> = None;
     static mut WAKERS: [Option<Waker>; QUEUE_SIZE] = [X; QUEUE_SIZE];
 
-    pub fn allocate(_: CriticalSection) -> Option<NonMaxU8> {
+    pub fn allocate(_: CriticalSection, waker: &Waker) -> Option<NonMaxU8> {
         unsafe {
+            for i in 0..QUEUE_SIZE {
+                if TAKEN[i] && WAKERS[i].as_ref().map_or(false, |w| w.will_wake(waker)) {
+                    return Some(NonMaxU8(i as u8));
+                }
+            }
             for i in 0..QUEUE_SIZE {
                 if !TAKEN[i] {
                     TAKEN[i] = true;
@@ -160,11 +165,7 @@ mod wake_queue {
 impl Driver for AvrTc0EmbassyTimeDriver {
     #[inline(always)]
     fn now(&self) -> Time {
-        avr_hal_generic::avr_device::interrupt::free(|_| unsafe {
-            // including the current count uses about 100 bytes?
-            // let cnt = avr_device::attiny1616::TCB0::steal().cnt().read().bits() / DIVIDER as u16;
-            TICKS_ELAPSED // + cnt as Time
-        })
+        avr_hal_generic::avr_device::interrupt::free(|_| unsafe { TICKS_ELAPSED })
     }
 
     unsafe fn allocate_alarm(&self) -> Option<AlarmHandle> {
@@ -192,7 +193,7 @@ impl TimerQueue for AvrTc0EmbassyTimeDriver {
     // #[inline(never)]
     fn schedule_wake(&'static self, at: Time, waker: &Waker) {
         avr_device::interrupt::free(|t| {
-            let Some(id) = wake_queue::allocate(t) else {
+            let Some(id) = wake_queue::allocate(t, waker) else {
                 panic!("queue full");
             };
 

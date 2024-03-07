@@ -1,10 +1,10 @@
 use core::hint::unreachable_unchecked;
 
-use crate::nonatomic::NonAtomicU8;
+use crate::nonatomic::{NonAtomicBool, NonAtomicU8};
 use atxtiny_hal::{
     dac::{Dac, Enabled},
     embedded_hal::digital::OutputPin,
-    gpio::{GpioExt as _, Input, Output, Pin, Porta, Portb, Stateless, U},
+    gpio::{Input, Output, Pin, Porta, Portb, Stateless, U},
     vref::{DACReferenceVoltage, ReferenceVoltage, VrefExt},
 };
 use avr_device::attiny1616::{DAC0, VREF};
@@ -19,6 +19,19 @@ const NUM_LEVELS: usize = 256;
 
 static DESIRED_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
 static GRADUAL_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
+static TORCH_IS_ON: NonAtomicBool = NonAtomicBool::new(false);
+
+pub async fn blink(blinks: u8) {
+    // TODO: calculate blink level off current level
+    let current_level = DESIRED_LEVEL.load();
+
+    for _ in 0..blinks {
+        set_level(40);
+        embassy_time::Timer::after_millis(100).await;
+        set_level(current_level);
+        embassy_time::Timer::after_millis(100).await;
+    }
+}
 
 pub fn set_level(value: u8) {
     DESIRED_LEVEL.store(value);
@@ -27,6 +40,10 @@ pub fn set_level(value: u8) {
 
 pub fn set_level_gradual(value: u8) {
     GRADUAL_LEVEL.store(value);
+}
+
+pub fn is_torch_on() -> bool {
+    TORCH_IS_ON.load()
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -488,7 +505,6 @@ pub struct PowerPaths {
     path3: Pin<Portb, U<4>, Output<Stateless>>,
     buck: Pin<Portb, U<3>, Output<Stateless>>,
     fet: Pin<Portb, U<2>, Output<Stateless>>,
-    state: Pin<Portb, U<0>, Output<Stateless>>,
     wakelock: Mug,
     buck_is_on: bool,
 }
@@ -502,10 +518,9 @@ impl PowerPaths {
         path3: atxtiny_hal::gpio::PB4<Input>,
         buck: atxtiny_hal::gpio::PB3<Input>,
         fet: atxtiny_hal::gpio::PB2<Input>,
-        state: atxtiny_hal::gpio::PB0<Input>,
     ) -> Self {
         dac.run_in_standby(true);
-        Self {
+        let mut s = Self {
             vref,
             dac,
             path1: path1.into_stateless_push_pull_output(),
@@ -513,10 +528,11 @@ impl PowerPaths {
             path3: path3.into_stateless_push_pull_output(),
             buck: buck.into_stateless_push_pull_output(),
             fet: fet.into_stateless_push_pull_output(),
-            state: state.into_stateless_push_pull_output(),
             wakelock: Mug::new(),
             buck_is_on: false,
-        }
+        };
+        s.off();
+        s
     }
 
     fn off(&mut self) {
@@ -564,9 +580,12 @@ impl PowerPaths {
         if level == 0 {
             self.off();
             self.wakelock.decaffeinate();
+            TORCH_IS_ON.store(false);
         } else if level == 255 {
+            #[cfg(feature = "has_fet")]
             self.turbo_level();
             self.wakelock.caffeinate();
+            TORCH_IS_ON.store(true);
         } else {
             self.wakelock.caffeinate();
             let config = OUTPUT_LEVELS.load_at(level as usize);
@@ -579,6 +598,7 @@ impl PowerPaths {
             self.dac.dac_set_value(config.dac_level);
             self.set_vref(config.path.reference());
             self.set_path(config.path.path_level());
+            TORCH_IS_ON.store(true);
         }
     }
 }
@@ -600,10 +620,16 @@ pub async fn power_controller(mut paths: PowerPaths) {
         let gradual_level = GRADUAL_LEVEL.load();
         let desired_level = DESIRED_LEVEL.load();
 
+        let delta = if desired_level.abs_diff(gradual_level) > 50 {
+            3
+        } else {
+            1
+        };
+
         let desired_level = if desired_level < gradual_level {
-            desired_level + 1
+            desired_level + delta
         } else if desired_level > gradual_level {
-            desired_level - 1
+            desired_level - delta
         } else {
             desired_level
         };

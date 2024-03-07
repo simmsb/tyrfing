@@ -12,6 +12,7 @@ pub use pwm::*;
 
 pub mod tca;
 pub mod tcb;
+pub mod tcb_8bit;
 pub mod rtc;
 
 use crate::time::*;

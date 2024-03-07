@@ -265,6 +265,28 @@ impl IntoMuxedPinset<TCA0> for crate::gpio::portb::PB5<Output<Stateless>> {
     }
 }
 
+// TCB 8 Bit PWM outputs
+use crate::timer::{tcb::TcbPinset, tcb_8bit::TCB8Bit};
+use crate::pac::TCB0;
+
+impl IntoMuxedPinset<TCB0> for crate::gpio::porta::PA5<Output<Stateless>> {
+    type Pinset = TcbPinset<TCB8Bit, crate::gpio::porta::PA5<Output<Stateless>>, C1>;
+
+    fn mux(self, portmux: &Portmux) -> Self::Pinset {
+        portmux.mux.ctrld().modify(|_r, w| w.tcb0().clear_bit());
+        TcbPinset::new(self)
+    }
+}
+
+impl IntoMuxedPinset<TCB0> for crate::gpio::portc::PC0<Output<Stateless>> {
+    type Pinset = TcbPinset<TCB8Bit, crate::gpio::portc::PC0<Output<Stateless>>, C1>;
+
+    fn mux(self, portmux: &Portmux) -> Self::Pinset {
+        portmux.mux.ctrld().modify(|_r, w| w.tcb0().set_bit());
+        TcbPinset::new(self)
+    }
+}
+
 // EVOUT
 use crate::evout::EventOutputPinset;
 use crate::evout::{EVOUT0, EVOUT1, EVOUT2};

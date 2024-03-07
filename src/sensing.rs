@@ -42,14 +42,7 @@ impl Smoother {
 }
 
 #[embassy_executor::task]
-pub async fn watchdock_tickler(
-    mut wd: WatchdogTimer,
-    p: atxtiny_hal::gpio::PC0<Input>,
-    mut adc: adc::Adc<ADC0, adc::Disabled>,
-) {
-    let mut p = p.into_push_pull_output();
-    p.set_high().unwrap_infallible();
-
+pub async fn watchdock_tickler(mut wd: WatchdogTimer, mut adc: adc::Adc<ADC0, adc::Disabled>) {
     let mut temp_smoother = Smoother(1970);
     let mut volt_smoother = Smoother(1380); // 5.2v (?)
 
@@ -78,8 +71,6 @@ pub async fn watchdock_tickler(
             v.volts_times_100(),
             v.0
         );
-
-        p.toggle().unwrap_infallible();
 
         embassy_time::Timer::after_millis(500).await;
     }

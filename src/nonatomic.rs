@@ -40,3 +40,4 @@ non_atomic_impl!(U32, u32);
 non_atomic_impl!(I8, i8);
 non_atomic_impl!(I16, i16);
 non_atomic_impl!(I32, i32);
+non_atomic_impl!(Bool, bool);

@@ -4,14 +4,9 @@
 use enumset::EnumSetType;
 
 use crate::pac::{TCA0, TCB0};
-use crate::{
-    Toggle,
-    pac::tcb0::ctrla,
-    time::*,
-    clkctrl::Clocks,
-};
+use crate::{clkctrl::Clocks, pac::tcb0::ctrla, time::*, Toggle};
 
-use super::{Instance, TimerClock, General, PeriodicMode, AsClockSource};
+use super::tcb_8bit::TCB8Bit;
 
 /// Interrupts for TCB
 #[derive(ufmt::derive::uDebug, Debug)]
@@ -32,21 +27,17 @@ pub enum Event {
 #[derive(Clone, Copy)]
 pub enum TCBClockSource {
     Peripheral(Clocks),
-    TCA(Hertz)
+    TCA(Hertz),
 }
 
 impl ufmt::uDebug for TCBClockSource {
     fn fmt<W>(&self, f: &mut ufmt::Formatter<'_, W>) -> Result<(), W::Error>
-        where
-            W: ufmt::uWrite + ?Sized {
-        
+    where
+        W: ufmt::uWrite + ?Sized,
+    {
         match self {
             TCBClockSource::Peripheral(_) => f.write_str("CLK_PER"),
-            TCBClockSource::TCA(c) =>{
-                f.debug_struct("CLK_TCA")?
-                    .field("Rate", &c.raw())?
-                    .finish()
-            }
+            TCBClockSource::TCA(c) => f.debug_struct("CLK_TCA")?.field("Rate", &c.raw())?.finish(),
         }
     }
 }
@@ -57,13 +48,22 @@ impl From<Clocks> for TCBClockSource {
     }
 }
 
-impl Instance for TCB0 {}
+pub trait Tcb8bitPwmCapable: super::Instance + super::TimerClock {
+    fn into_8bit_pwm(self) -> TCB8Bit;
+}
 
-impl TimerClock for TCB0 {
+impl super::Instance for TCB0 {}
+impl Tcb8bitPwmCapable for TCB0 {
+    fn into_8bit_pwm(self) -> TCB8Bit {
+        TCB8Bit { tim: self }
+    }
+}
+
+impl super::TimerClock for TCB0 {
     type ClockSource = TCBClockSource;
 
     #[inline(always)]
-    fn get_input_clock_rate(clk: TCBClockSource) -> Hertz {
+    fn get_input_clock_rate(clk: Self::ClockSource) -> Hertz {
         match clk {
             TCBClockSource::Peripheral(clocks) => clocks.per(),
             TCBClockSource::TCA(clk) => clk,
@@ -73,7 +73,7 @@ impl TimerClock for TCB0 {
     #[inline(always)]
     fn prepare_clock_source(&mut self, clk: Self::ClockSource) {
         match clk {
-            TCBClockSource::Peripheral(_) => {},
+            TCBClockSource::Peripheral(_) => {}
             TCBClockSource::TCA(_) => self.ctrla().modify(|_, w| w.clksel().clktca()),
         }
     }
@@ -89,7 +89,8 @@ impl TimerClock for TCB0 {
     #[inline(always)]
     fn set_prescaler(&mut self, psc: u16) {
         if !self.ctrla().read().clksel().is_clktca() {
-            self.ctrla().modify(|_, w| w.clksel().variant(into_clksrc(psc)));
+            self.ctrla()
+                .modify(|_, w| w.clksel().variant(into_clksrc(psc)));
         }
     }
 
@@ -99,12 +100,12 @@ impl TimerClock for TCB0 {
         let prescaler = self.ctrla().read().clksel().variant().unwrap();
         match prescaler {
             CLKTCA => 1,
-            _ => from_clksrc(prescaler)
+            _ => from_clksrc(prescaler),
         }
     }
 }
 
-impl AsClockSource for TCA0 {
+impl super::AsClockSource for TCA0 {
     type OutputClock = TCBClockSource;
 
     #[inline(always)]
@@ -113,16 +114,14 @@ impl AsClockSource for TCA0 {
     }
 }
 
-impl General for TCB0 {
+impl super::General for TCB0 {
     const TIMER_WIDTH_BITS: u8 = 16;
     type CounterValue = u16;
     type Interrupt = Interrupt;
     type Event = Event;
 
     #[inline(always)]
-    fn reset_counter_peripheral(&mut self) {
-        
-    }
+    fn reset_counter_peripheral(&mut self) {}
 
     #[inline(always)]
     fn enable_counter(&mut self) {
@@ -182,7 +181,7 @@ impl General for TCB0 {
     }
 }
 
-impl PeriodicMode for TCB0 {
+impl super::PeriodicMode for TCB0 {
     #[inline(always)]
     fn set_periodic_mode(&mut self) {
         self.ctrlb().modify(|_, w| w.cntmode().int());
@@ -243,3 +242,41 @@ fn from_clksrc(prescaler: ctrla::CLKSEL_A) -> u16 {
 }
 
 impl crate::private::Sealed for crate::pac::TCB0 {}
+
+use super::pwm::{WaveformOutputPinset, C1};
+use crate::gpio::{Output, Stateless};
+use core::marker::PhantomData;
+
+/// A pin can be marked with this when it can be used as a waveform output pin
+pub trait WaveformOutputPin<TCB, const CHAN: u8> {}
+
+/// Pin set for the port multiplexer
+pub struct TcbPinset<TIM, WaveformOutput: WaveformOutputPin<TIM, CHAN>, const CHAN: u8> {
+    _tim: PhantomData<TIM>,
+    output: WaveformOutput,
+}
+
+impl<TIM, WaveformOutput, const CHAN: u8> TcbPinset<TIM, WaveformOutput, CHAN>
+where
+    WaveformOutput: WaveformOutputPin<TIM, CHAN>,
+{
+    pub(crate) fn new(output: WaveformOutput) -> Self {
+        TcbPinset {
+            _tim: PhantomData,
+            output,
+        }
+    }
+
+    pub fn free(self) -> WaveformOutput {
+        self.output
+    }
+}
+
+// TCB 8 Bit PWM mode outputs
+impl<WaveformOutput: WaveformOutputPin<TCB8Bit, CHAN>, const CHAN: u8>
+    WaveformOutputPinset<TCB8Bit, CHAN> for TcbPinset<TCB8Bit, WaveformOutput, CHAN>
+{
+}
+
+impl WaveformOutputPin<TCB8Bit, C1> for crate::gpio::porta::PA5<Output<Stateless>> {}
+impl WaveformOutputPin<TCB8Bit, C1> for crate::gpio::portc::PC0<Output<Stateless>> {}
