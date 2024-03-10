@@ -45,6 +45,14 @@ pub mod with_timeout;
 
 use adc::AdcExt as _;
 
+macro_rules! powersave_pins {
+    ($($pin:expr),* $(,)?) => {
+        {
+            $($pin.into_pull_up_input();)*
+        }
+    };
+}
+
 #[embassy_executor::main]
 async fn main(spawner: embassy_executor::Spawner) {
     let dp = pac::Peripherals::take().unwrap();
@@ -116,6 +124,10 @@ async fn main(spawner: embassy_executor::Spawner) {
     );
 
     sleep::set_sleep_mode(SMODE_A::PDOWN);
+
+    powersave_pins!(a.pa0, a.pa3, a.pa4, a.pa5);
+    powersave_pins!(b.pb6, b.pb7);
+    powersave_pins!(c.pc1, c.pc2, c.pc4, c.pc5);
 }
 
 #[panic_handler]
