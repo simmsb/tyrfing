@@ -1,6 +1,11 @@
 # Flashlight firmware, written in rust
 
-This is flashlight firmware for the lume1-6af (attiny1616), written in Rust.
+
+https://github.com/simmsb/tyrfing/assets/5330444/455c9a46-7eb3-438b-a824-84d08574c565
+
+
+This is flashlight firmware for the lume1-6af (attiny1616), written in Rust. 
+It supports thermal and voltage regulation that prevents LED and battery damage by reducing output as temperature increases, and prevents usage when the battery voltage is too low.
 
 The UI is implemented using async rust, which makes adding new modes of operation fairly trivial.
 
