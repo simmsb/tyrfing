@@ -208,6 +208,12 @@ impl Pit {
         Pit(rtc)
     }
 
+    pub fn reconfigure(&mut self, clk: RTCClockSource, period: PERIOD_A) {
+        self.0.prepare_clock_source(clk);
+        while self.0.pitstatus().read().ctrlbusy().bit_is_set() {}
+        self.0.pitctrla().modify(|_, w| w.period().variant(period));
+    }
+
     pub fn enable_interrupt(&mut self) {
         self.0.pitintctrl().modify(|_, w| w.pi().set_bit());
     }
@@ -220,6 +226,10 @@ impl Pit {
 
     pub fn clear_interrupt(&mut self) {
         self.0.pitintflags().modify(|_, w| w.pi().set_bit());
+    }
+
+    pub fn set_period(&mut self, period: PERIOD_A) {
+        self.0.pitctrla().modify(|_, w| w.period().variant(period));
     }
 }
 

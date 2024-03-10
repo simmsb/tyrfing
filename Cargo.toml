@@ -22,7 +22,7 @@ avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-sect
 
 embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], path = "vendor/embassy/embassy-executor" }
 embassy-time = { version = "0.3.0", path = "vendor/embassy/embassy-time" }
-embassy-time-driver = { version = "0.1.0", features = ["tick-hz-128"], path = "vendor/embassy/embassy-time-driver" }
+embassy-time-driver = { version = "0.1.0", features = ["tick-hz-1_024"], path = "vendor/embassy/embassy-time-driver" }
 embassy-time-queue-driver = { version = "0.1.0", path = "vendor/embassy/embassy-time-queue-driver" }
 embassy-sync = { path = "vendor/embassy/embassy-sync", features = ["turbowakers"] }
 embassy-futures = { path = "vendor/embassy/embassy-futures" }

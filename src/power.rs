@@ -21,6 +21,15 @@ static DESIRED_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
 static GRADUAL_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
 static TORCH_IS_ON: NonAtomicBool = NonAtomicBool::new(false);
 
+static POKE_POWER_CONTROLLER: embassy_sync::signal::Signal<
+    embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
+    (),
+> = embassy_sync::signal::Signal::new();
+
+pub fn poke_power_controller() {
+    POKE_POWER_CONTROLLER.signal(());
+}
+
 pub async fn blink(blinks: u8) {
     // TODO: calculate blink level off current level
     let current_level = DESIRED_LEVEL.load();
@@ -613,27 +622,30 @@ pub async fn power_controller(mut paths: PowerPaths) {
     let mut previous_level = 0u8;
 
     let mut accumulated_over_temp = 0u32;
+    let mut tick_this_time = true;
 
     // let mut l = unsafe { atxtiny_hal::avr_device::attiny1616::PORTB::steal().split().pb0.into_push_pull_output() };
 
     loop {
-        let gradual_level = GRADUAL_LEVEL.load();
-        let desired_level = DESIRED_LEVEL.load();
+        if tick_this_time {
+            let gradual_level = GRADUAL_LEVEL.load();
+            let desired_level = DESIRED_LEVEL.load();
 
-        let delta = if desired_level.abs_diff(gradual_level) > 50 {
-            3
-        } else {
-            1
-        };
+            let delta = if desired_level.abs_diff(gradual_level) > 50 {
+                3
+            } else {
+                1
+            };
 
-        let desired_level = if desired_level < gradual_level {
-            desired_level + delta
-        } else if desired_level > gradual_level {
-            desired_level - delta
-        } else {
-            desired_level
-        };
-        DESIRED_LEVEL.store(desired_level);
+            let desired_level = if desired_level < gradual_level {
+                desired_level + delta
+            } else if desired_level > gradual_level {
+                desired_level - delta
+            } else {
+                desired_level
+            };
+            DESIRED_LEVEL.store(desired_level);
+        }
 
         let mut actual_level = DESIRED_LEVEL.load();
 
@@ -655,9 +667,11 @@ pub async fn power_controller(mut paths: PowerPaths) {
             // TODO: do somethin with the aux
         }
 
-        let temp_diff = (temp as i32) - (MAX_TEMP.0 as i32);
+        if tick_this_time {
+            let temp_diff = (temp as i32) - (MAX_TEMP.0 as i32);
 
-        accumulated_over_temp = accumulated_over_temp.saturating_add_signed(temp_diff);
+            accumulated_over_temp = accumulated_over_temp.saturating_add_signed(temp_diff);
+        }
 
         const TICKS_PER_SEC: u32 = 100;
         let power_decrease = 10 * (accumulated_over_temp / 64) / (TICKS_PER_SEC * 5);
@@ -672,6 +686,11 @@ pub async fn power_controller(mut paths: PowerPaths) {
             paths.set_power_level(actual_level).await;
         }
 
-        embassy_time::Timer::after(embassy_time::Duration::from_hz(TICKS_PER_SEC)).await;
+        tick_this_time = crate::with_timeout::with_timeout(
+            Some(embassy_time::Duration::from_hz(TICKS_PER_SEC)),
+            POKE_POWER_CONTROLLER.wait(),
+        )
+        .await
+        .is_err();
     }
 }

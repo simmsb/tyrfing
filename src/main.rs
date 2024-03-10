@@ -74,7 +74,7 @@ async fn main(spawner: embassy_executor::Spawner) {
     let b = dp.PORTB.split();
     let c = dp.PORTC.split();
 
-    time::init_system_time(dp.RTC, None);
+    time::init_system_time(dp.RTC);
 
     let mut vref = dp.VREF.constrain();
 

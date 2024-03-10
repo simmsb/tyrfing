@@ -5,12 +5,17 @@ use atxtiny_hal::{
 };
 use avr_device::{
     attiny1616::{rtc::pitctrla::PERIOD_A, RTC},
-    interrupt::CriticalSection,
+    interrupt::{CriticalSection, Mutex},
 };
-use core::{mem::MaybeUninit, task::Waker};
+use core::{
+    borrow::BorrowMut,
+    cell::{RefCell, UnsafeCell},
+    mem::MaybeUninit,
+    task::Waker,
+};
 use embassy_time_driver::{AlarmHandle, Driver};
 use embassy_time_queue_driver::TimerQueue;
-
+use fixed::traits::LosslessTryInto;
 
 #[cfg(feature = "time_u32")]
 pub type Time = u32;
@@ -115,17 +120,17 @@ mod wake_queue {
     const X: Option<Waker> = None;
     static mut WAKERS: [Option<Waker>; QUEUE_SIZE] = [X; QUEUE_SIZE];
 
-    pub fn allocate(_: CriticalSection, waker: &Waker) -> Option<NonMaxU8> {
+    pub fn allocate(_: CriticalSection, waker: &Waker) -> Option<(NonMaxU8, bool)> {
         unsafe {
             for i in 0..QUEUE_SIZE {
                 if TAKEN[i] && WAKERS[i].as_ref().map_or(false, |w| w.will_wake(waker)) {
-                    return Some(NonMaxU8(i as u8));
+                    return Some((NonMaxU8(i as u8), true));
                 }
             }
             for i in 0..QUEUE_SIZE {
                 if !TAKEN[i] {
                     TAKEN[i] = true;
-                    return Some(NonMaxU8(i as u8));
+                    return Some((NonMaxU8(i as u8), false));
                 }
             }
 
@@ -153,8 +158,15 @@ mod wake_queue {
         }
     }
 
-    pub fn set_at(_: CriticalSection, id: NonMaxU8, v: Time) {
-        unsafe { *ATS.get_unchecked_mut(id.0 as usize) = v }
+    pub fn set_at(_: CriticalSection, id: NonMaxU8, v: Time, set_to_min: bool) {
+        unsafe {
+            let at = ATS.get_unchecked_mut(id.0 as usize);
+            if set_to_min {
+                *at = (*at).min(v);
+            } else {
+                *at = v;
+            }
+        }
     }
 
     pub fn set_waker(_: CriticalSection, id: NonMaxU8, w: Option<Waker>) {
@@ -193,12 +205,12 @@ impl TimerQueue for AvrTc0EmbassyTimeDriver {
     // #[inline(never)]
     fn schedule_wake(&'static self, at: Time, waker: &Waker) {
         avr_device::interrupt::free(|t| {
-            let Some(id) = wake_queue::allocate(t, waker) else {
+            let Some((id, already_present)) = wake_queue::allocate(t, waker) else {
                 panic!("queue full");
             };
 
             wake_queue::set_waker(t, id, Some(waker.clone()));
-            wake_queue::set_at(t, id, at);
+            wake_queue::set_at(t, id, at, already_present);
         })
     }
 }
@@ -210,17 +222,62 @@ unsafe fn RTC_PIT() {
 
 struct InterruptState {
     pub counter: Pit,
-    pub led: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, Output<Stateful>>>,
+    pub ticks_per_count: u8,
 }
 
-static mut INTERRUPT_STATE: MaybeUninit<InterruptState> = MaybeUninit::uninit();
+impl InterruptState {
+    fn configure_pit(&mut self, config: PitConfig) {
+        self.counter.reconfigure(config.clock_source, config.period);
+        self.ticks_per_count = config.ticks_per_count;
+    }
+}
+
+struct PitConfig {
+    ticks_per_count: u8,
+    clock_source: RTCClockSource,
+    period: PERIOD_A,
+}
+
+impl PitConfig {
+    const fn new(ticks_per_count: u8, clock_source: RTCClockSource, period: PERIOD_A) -> Self {
+        Self {
+            ticks_per_count,
+            clock_source,
+            period,
+        }
+    }
+}
+
+const TICK_CONFIG_1024: PitConfig =
+    PitConfig::new(1, RTCClockSource::OSCULP32K_32K, PERIOD_A::CYC32);
+const TICK_CONFIG_64: PitConfig = PitConfig::new(16, RTCClockSource::OSCULP32K_1K, PERIOD_A::CYC16);
+
+static INTERRUPT_STATE: Mutex<RefCell<Option<InterruptState>>> = Mutex::new(RefCell::new(None));
+
+pub fn enter_sleep_clock() {
+    avr_device::interrupt::free(|t| {
+        let mut state = INTERRUPT_STATE.borrow(t).borrow_mut();
+        state.as_mut().unwrap().configure_pit(TICK_CONFIG_64);
+    });
+}
+
+pub fn enter_wake_clock() {
+    avr_device::interrupt::free(|t| {
+        let mut state = INTERRUPT_STATE.borrow(t).borrow_mut();
+        state.as_mut().unwrap().configure_pit(TICK_CONFIG_1024);
+    });
+}
 
 #[inline(always)]
 pub unsafe fn handle_tick() {
-    let state = unsafe { &mut *INTERRUPT_STATE.as_mut_ptr() };
-    let _ = state.led.as_mut().map(|p| p.set_low());
     let (should_process, ticks_elapsed) = avr_device::interrupt::free(|t| {
-        let elapsed = TICKS_ELAPSED + TICKS_PER_COUNT;
+        let elapsed = TICKS_ELAPSED
+            + INTERRUPT_STATE
+                .borrow(t)
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .ticks_per_count as u32;
         TICKS_ELAPSED = elapsed;
         (mark_in_progress(t), elapsed)
     });
@@ -232,24 +289,26 @@ pub unsafe fn handle_tick() {
 
     avr_device::interrupt::free(|t| {
         mark_finished(t);
+        let mut state = INTERRUPT_STATE.borrow(t).borrow_mut();
+        state.as_mut().unwrap().counter.clear_interrupt();
     });
-    state.counter.clear_interrupt();
-    let _ = state.led.as_mut().map(|p| p.set_high());
 }
 
-pub fn init_system_time(tc: RTC, p: Option<Pin<Portc, atxtiny_hal::gpio::U<0>, Output<Stateful>>>) {
+pub fn init_system_time(tc: RTC) {
     unsafe {
         avr_device::interrupt::enable();
-        avr_device::interrupt::free(|_| {
+        avr_device::interrupt::free(|t| {
             TICKS_ELAPSED = 0;
 
-            let mut pit = Pit::from_rtc(tc, RTCClockSource::OSCULP32K_1K, PERIOD_A::CYC8);
+            let pitconfig = TICK_CONFIG_64;
+
+            let mut pit = Pit::from_rtc(tc, pitconfig.clock_source, pitconfig.period);
             pit.enable_interrupt();
             pit.start();
 
-            INTERRUPT_STATE = MaybeUninit::new(InterruptState {
+            *INTERRUPT_STATE.borrow(t).borrow_mut() = Some(InterruptState {
                 counter: pit,
-                led: p,
+                ticks_per_count: pitconfig.ticks_per_count,
             });
         });
     }

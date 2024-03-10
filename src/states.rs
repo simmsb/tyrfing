@@ -9,7 +9,21 @@ use crate::{
     with_timeout::with_timeout,
 };
 
-pub static IS_TORCH_UNLOCKED: NonAtomicBool = NonAtomicBool::new(false);
+static IS_TORCH_UNLOCKED: NonAtomicBool = NonAtomicBool::new(false);
+
+pub fn is_torch_unlocked() -> bool {
+    IS_TORCH_UNLOCKED.load()
+}
+
+fn lock_torch() {
+    IS_TORCH_UNLOCKED.store(false);
+    crate::time::enter_sleep_clock();
+}
+
+fn unlock_torch() {
+    IS_TORCH_UNLOCKED.store(true);
+    crate::time::enter_wake_clock();
+}
 
 const DEFAULT_LEVEL: u8 = 27;
 
@@ -28,7 +42,7 @@ pub async fn torch_ui() {
             .await;
             let Ok(evt) = evt else {
                 blink(1).await;
-                IS_TORCH_UNLOCKED.store(false);
+                lock_torch();
                 continue;
             };
             match evt {
@@ -48,7 +62,7 @@ pub async fn torch_ui() {
                 }
                 ButtonEvent::Click4 => {
                     blink(1).await;
-                    IS_TORCH_UNLOCKED.store(false);
+                    lock_torch();
                 }
                 _ => {}
             }
@@ -57,7 +71,7 @@ pub async fn torch_ui() {
             match evt {
                 ButtonEvent::Click3 => {
                     blink(1).await;
-                    IS_TORCH_UNLOCKED.store(true);
+                    unlock_torch();
                     saved_level = DEFAULT_LEVEL;
                 }
                 _ => {}
@@ -68,12 +82,15 @@ pub async fn torch_ui() {
 
 async fn on_strobe() {
     let level = Cell::new(DEFAULT_LEVEL);
-    let period = Cell::new(Duration::from_hz(100));
+    let period = Cell::new(Duration::from_hz(10));
 
     let strobe = async {
+        let mut on = true;
         loop {
             embassy_time::Timer::after(period.get()).await;
-            crate::power::set_level(level.get())
+            crate::power::set_level(if on { level.get() } else { 1 });
+            crate::power::poke_power_controller();
+            on = !on;
         }
     };
 
@@ -91,11 +108,11 @@ async fn on_strobe() {
                         -1
                     };
                     loop {
-                        if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
+                        if with_timeout(Some(Duration::from_millis(200)), BUTTON_EVENTS.wait())
                             .await
                             .is_err()
                         {
-                            level.set(level.get().saturating_add_signed(direction));
+                            level.set(level.get().saturating_add_signed(direction * 4));
                         } else {
                             break;
                         }
@@ -105,34 +122,34 @@ async fn on_strobe() {
                     }
                 }
                 crate::events::ButtonEvent::Hold2 => loop {
-                    if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
+                    if with_timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
-                        level.set(level.get().saturating_sub(1));
+                        level.set(level.get().saturating_sub(4));
                     } else {
                         break;
                     }
                 },
                 crate::events::ButtonEvent::Hold3 => loop {
-                    if with_timeout(Some(Duration::from_millis(32)), BUTTON_EVENTS.wait())
+                    if with_timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
                         period.set(Duration::from_ticks(
-                            period.get().as_ticks().saturating_sub(1),
+                            period.get().as_ticks().saturating_sub(10),
                         ));
                     } else {
                         break;
                     }
                 },
                 crate::events::ButtonEvent::Hold4 => loop {
-                    if with_timeout(Some(Duration::from_millis(32)), BUTTON_EVENTS.wait())
+                    if with_timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
                         period.set(Duration::from_ticks(
-                            period.get().as_ticks().saturating_add(1),
+                            period.get().as_ticks().saturating_add(10),
                         ));
                     } else {
                         break;
@@ -163,9 +180,14 @@ async fn on_fadeout() {
             let brightness = if time_left > Duration::from_secs(60 * 4) {
                 level.get()
             } else {
-                let remaining = time_left.as_ticks() / Duration::from_secs(60 * 4).as_ticks();
-                let remaining = (remaining >> 24) as u8;
-                cichlid::math::scale_u8(level.get(), 255 - remaining)
+                let remaining = fixed::types::U32F0::from_num(time_left.as_ticks())
+                    .inv_lerp::<fixed::types::extra::U32>(
+                        0u32.into(),
+                        Duration::from_secs(60 * 4).as_ticks().into(),
+                    )
+                    .lerp(0u32.into(), 255u32.into())
+                    .saturating_to_num::<u8>();
+                cichlid::math::scale_u8(level.get(), remaining)
             };
 
             crate::power::set_level_gradual(brightness)
