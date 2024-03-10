@@ -7,6 +7,56 @@ The UI is implemented using async rust, which makes adding new modes of operatio
 The UI and features are inspired by the
 [Andúril](https://github.com/ToyKeeper/anduril) firmware
 
+## Current UI
+
+This might be wrong, the [source code is here](./src/states.rs)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Locked
+
+    state Locked
+
+    Locked --> Unlocked : 3c
+    Unlocked --> Locked : 4c
+    Unlocked --> Locked : Timeout
+
+
+    state Unlocked {
+        [*] --> Ramping : 1c
+        [*] --> Ramping : 1h (low start)
+        
+        state Ramping {
+            [*] --> [*] : 1h (increase brightness)
+            [*] --> [*] : 2h (decrease brightness)
+        }
+        
+        Ramping --> [*] : 1c
+
+        [*] --> Fading : 2h
+        
+        state Fading {
+            [*] --> [*] : 1h (increase brightness)
+            [*] --> [*] : 2h (decrease brightness)
+            [*] --> [*] : 3h (increase timeout)
+        }
+        
+        Fading --> [*] : 1c
+
+        [*] --> Strobing : 3h
+        
+        state Strobing {
+            [*] --> [*] : 1h (increase brightness)
+            [*] --> [*] : 2h (decrease brightness)
+            [*] --> [*] : 3h (decrease period)
+            [*] --> [*] : 4h (increase period)
+        }
+        
+        Strobing --> [*] : 1c
+
+    }
+```
+
 ## Thanks
 
 This project relies on and makes modifications to:
