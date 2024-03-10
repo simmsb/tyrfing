@@ -10,7 +10,7 @@ use avr_device::{
 use core::{mem::MaybeUninit, task::Waker};
 use embassy_time_driver::{AlarmHandle, Driver};
 use embassy_time_queue_driver::TimerQueue;
-use env_int::env_int;
+
 
 #[cfg(feature = "time_u32")]
 pub type Time = u32;
@@ -169,7 +169,7 @@ impl Driver for AvrTc0EmbassyTimeDriver {
     }
 
     unsafe fn allocate_alarm(&self) -> Option<AlarmHandle> {
-        avr_hal_generic::avr_device::interrupt::free(|t| timer_queue::allocate(t))
+        avr_hal_generic::avr_device::interrupt::free(timer_queue::allocate)
             .map(|n| AlarmHandle::new(n.0))
     }
 

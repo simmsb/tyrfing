@@ -27,7 +27,7 @@ macro_rules! serial_println {
     ($($arg:expr),*) => {{
         #[cfg(feature = "logging")]
         avr_device::interrupt::free(|t| {
-            let s = &mut *crate::logger::SERIAL.borrow(t).borrow_mut();
+            let s = &mut *$crate::logger::SERIAL.borrow(t).borrow_mut();
             if let Some(w) = s.as_mut() {
                 let _ = ::ufmt::uwriteln!(w, $($arg),*);
                 use embedded_io::Write;

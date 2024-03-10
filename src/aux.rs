@@ -255,7 +255,7 @@ fn hue_to_rgb(hue: u8) -> ColorRGB {
     let ramp_up = offset;
     let ramp_down = HSV_SECTION_4 - offset;
 
-    let amplitude = 191 as u16;
+    let amplitude = 191_u16;
 
     let ramp_up_amp_adj = ((ramp_up as u16 * amplitude) / (256 / 4)) as u8;
     let ramp_down_amp_adj = ((ramp_down as u16 * amplitude) / (256 / 4)) as u8;
@@ -413,8 +413,8 @@ pub fn setup(
     let tca_clk = t.use_as_clock_source();
 
     let pwm_pins = (
-        pb0.into_stateless_push_pull_output().mux(&portmux),
-        pb1.into_stateless_push_pull_output().mux(&portmux),
+        pb0.into_stateless_push_pull_output().mux(portmux),
+        pb1.into_stateless_push_pull_output().mux(portmux),
     );
 
     let mut pwm1 = t
@@ -425,7 +425,7 @@ pub fn setup(
         )
         .unwrap();
 
-    let pwm2_pins = pc0.into_stateless_push_pull_output().mux(&portmux);
+    let pwm2_pins = pc0.into_stateless_push_pull_output().mux(portmux);
 
     let t2 = atxtiny_hal::timer::FTimer::<_, 31250>::new(tcb0.into_8bit_pwm(), tca_clk).unwrap();
     let mut pwm2 = t2

@@ -22,7 +22,7 @@ use atxtiny_hal::bod::BodExt;
 use atxtiny_hal::dac::DacExt;
 use atxtiny_hal::pac;
 use atxtiny_hal::prelude::*;
-use atxtiny_hal::timer::tca::WaveformGenerationMode;
+
 use atxtiny_hal::vref::ReferenceVoltage;
 use atxtiny_hal::vref::VrefExt;
 use avr_device::attiny1616::slpctrl::ctrla::SMODE_A;

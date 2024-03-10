@@ -1,4 +1,4 @@
-use core::{marker::PhantomData, ops::Div, task::Poll};
+use core::{marker::PhantomData, task::Poll};
 
 use atxtiny_hal::vref::{ADCReferenceVoltage, ReferenceVoltage, VrefExt};
 use avr_device::attiny1616::{
@@ -89,7 +89,7 @@ impl Temperature<u16> {
 
         let r = r as u32;
         let r = r.saturating_add_signed(offset);
-        let r = r * gain as u32;
+        let r = r * gain;
         let r = r + 65536 / 8;
         let r = r >> 8;
         r as u16

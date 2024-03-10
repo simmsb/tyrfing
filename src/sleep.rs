@@ -13,6 +13,12 @@ static COFFEE: AtomicU8 = AtomicU8::new(0);
 
 pub struct Mug(bool);
 
+impl Default for Mug {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Mug {
     pub fn new() -> Self {
         Self(false)
@@ -52,7 +58,7 @@ fn decaffeinate() {
 #[macro_export]
 macro_rules! with_wakelock {
     ($e:expr) => {{
-        let mut m = crate::sleep::Mug::new();
+        let mut m = $crate::sleep::Mug::new();
         m.caffeinate();
         let result = $e;
         m.decaffeinate();

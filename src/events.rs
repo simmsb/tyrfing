@@ -1,17 +1,14 @@
-use atxtiny_hal;
 use atxtiny_hal::embedded_hal::digital::InputPin;
 use atxtiny_hal::embedded_hal::digital::OutputPin;
-use atxtiny_hal::embedded_hal::digital::StatefulOutputPin;
+
 use atxtiny_hal::gpio::Edge;
 use atxtiny_hal::gpio::GpioExt;
 use atxtiny_hal::gpio::Input;
 use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
-use core::future::Future;
-use embassy_sync;
-use embassy_time::Duration;
-use embassy_time::Instant;
-use futures_util::pin_mut;
 
+use embassy_time::Duration;
+
+#[derive(PartialEq)]
 pub enum ButtonEvent {
     Click1,
     Click2,

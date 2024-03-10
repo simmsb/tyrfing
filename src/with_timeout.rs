@@ -39,6 +39,6 @@ pub fn with_timeout<F: Future>(
     timeout: Option<Duration>,
     fut: F,
 ) -> impl Future<Output = Result<F::Output, ()>> {
-    let timer = timeout.map(|t| embassy_time::Timer::after(t));
+    let timer = timeout.map(embassy_time::Timer::after);
     WithTimeout { timer, fut }
 }
