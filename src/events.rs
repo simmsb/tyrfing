@@ -66,16 +66,6 @@ pub enum ButtonState {
     Press,
 }
 
-impl ButtonState {
-    fn from_bool(v: bool) -> Self {
-        if v {
-            Self::Press
-        } else {
-            Self::Depress
-        }
-    }
-}
-
 pub static BUTTON_STATES: embassy_sync::signal::Signal<
     embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
     ButtonState,

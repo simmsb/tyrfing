@@ -1,16 +1,21 @@
 [package]
-name = "embassy-avr-test"
+name = "tyrfing"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["space_saving", "logging"]
+default = ["space_saving", "default_modes"]
 logging = ["dep:ufmt"]
 space_saving = ["time_u32"]
 time_u32 = []
 has_fet = []
+
+default_modes = ["mode_fade"]
+
+mode_strobe = []
+mode_fade = []
 
 [dependencies]
 avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-section-impl"] }
@@ -46,6 +51,7 @@ fixed = "1.25.1"
 
 [dependencies.avr-hal-generic]
 git = "https://github.com/rahix/avr-hal.git"
+rev = "4dbd683dc335f9ad40d66c974d9baac1bc143a34"
 
 [patch.crates-io]
 avr-device = { path = "vendor/avr-device" }

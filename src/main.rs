@@ -37,6 +37,7 @@ pub mod logger;
 pub mod nonatomic;
 pub mod peripheral_ref;
 pub mod power;
+pub mod power_levels;
 pub mod sensing;
 pub mod sleep;
 pub mod states;

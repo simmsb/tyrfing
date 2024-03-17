@@ -2,7 +2,6 @@ use crate::nonatomic::NonAtomicU16;
 
 use atxtiny_hal::watchdog::WatchdogTimer;
 use avr_device::attiny1616::ADC0;
-use avr_hal_generic::prelude::*;
 
 use crate::adc::{self, Temperature, Voltage};
 

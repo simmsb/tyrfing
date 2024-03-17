@@ -54,9 +54,11 @@ pub async fn torch_ui() {
                     })
                     .await;
                 }
+                #[cfg(feature = "mode_fade")]
                 ButtonEvent::Hold2 => {
                     on_fadeout().await;
                 }
+                #[cfg(feature = "mode_stobe")]
                 ButtonEvent::Hold3 => {
                     on_strobe().await;
                 }
@@ -69,6 +71,13 @@ pub async fn torch_ui() {
         } else {
             let evt = BUTTON_EVENTS.wait().await;
             match evt {
+                ButtonEvent::Hold1 => {
+                    crate::power::set_level_gradual(40);
+
+                    BUTTON_EVENTS.wait().await;
+
+                    crate::power::set_level_gradual(0);
+                }
                 ButtonEvent::Click3 => {
                     blink(1).await;
                     unlock_torch();
@@ -80,6 +89,7 @@ pub async fn torch_ui() {
     }
 }
 
+#[cfg(feature = "mode_stobe")]
 async fn on_strobe() {
     let level = Cell::new(DEFAULT_LEVEL);
     let period = Cell::new(Duration::from_hz(10));
@@ -165,6 +175,7 @@ async fn on_strobe() {
     crate::power::set_level_gradual(0);
 }
 
+#[cfg(feature = "mode_fade")]
 async fn on_fadeout() {
     let level = Cell::new(DEFAULT_LEVEL);
     let expiry = Cell::new(Instant::now() + Duration::from_secs(60 * 4));

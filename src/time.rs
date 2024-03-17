@@ -1,21 +1,11 @@
-use atxtiny_hal::{
-    embedded_hal::digital::OutputPin,
-    gpio::{Output, Pin, Portc, Stateful},
-    timer::rtc::{Pit, RTCClockSource},
-};
+use atxtiny_hal::timer::rtc::{Pit, RTCClockSource};
 use avr_device::{
     attiny1616::{rtc::pitctrla::PERIOD_A, RTC},
     interrupt::{CriticalSection, Mutex},
 };
-use core::{
-    borrow::BorrowMut,
-    cell::{RefCell, UnsafeCell},
-    mem::MaybeUninit,
-    task::Waker,
-};
+use core::{cell::RefCell, task::Waker};
 use embassy_time_driver::{AlarmHandle, Driver};
 use embassy_time_queue_driver::TimerQueue;
-use fixed::traits::LosslessTryInto;
 
 #[cfg(feature = "time_u32")]
 pub type Time = u32;

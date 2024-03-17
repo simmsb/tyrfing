@@ -328,15 +328,15 @@ fn volts_to_1bit_rgb() -> Rgb1Bit {
         Voltage::volts_to_adc_output(x)
     }
 
-    if volts > const { v(4.2) } {
+    if volts > const { v(4.1) } {
         Rgb1Bit::new(true, false, true)
-    } else if volts > const { v(4.1) } {
+    } else if volts > const { v(3.9) } {
         Rgb1Bit::new(false, false, true)
-    } else if volts > const { v(4.0) } {
+    } else if volts > const { v(3.7) } {
         Rgb1Bit::new(false, true, true)
-    } else if volts > const { v(3.8) } {
+    } else if volts > const { v(3.5) } {
         Rgb1Bit::new(false, true, false)
-    } else if volts > const { v(3.6) } {
+    } else if volts > const { v(3.3) } {
         Rgb1Bit::new(true, true, false)
     } else {
         Rgb1Bit::new(true, false, false)
