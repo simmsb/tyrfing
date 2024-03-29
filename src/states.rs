@@ -2,8 +2,10 @@ use core::cell::Cell;
 
 use embassy_time::{Duration, Instant};
 
+use embassy_futures::select;
+
 use crate::{
-    events::{ButtonEvent, BUTTON_EVENTS},
+    events::{ButtonEvent, ButtonState, BUTTON_EVENTS, LOCKOUT_BUTTON_STATES},
     nonatomic::NonAtomicBool,
     power::blink,
     with_timeout::with_timeout,
@@ -69,16 +71,15 @@ pub async fn torch_ui() {
                 _ => {}
             }
         } else {
-            let evt = BUTTON_EVENTS.wait().await;
+            let evt = select::select(BUTTON_EVENTS.wait(), LOCKOUT_BUTTON_STATES.wait()).await;
             match evt {
-                ButtonEvent::Hold1 => {
-                    crate::power::set_level_gradual(40);
-
-                    BUTTON_EVENTS.wait().await;
-
-                    crate::power::set_level_gradual(0);
+                select::Either::Second(ButtonState::Press) => {
+                    crate::power::set_level(40);
                 }
-                ButtonEvent::Click3 => {
+                select::Either::Second(ButtonState::Depress) => {
+                    crate::power::set_level(0);
+                }
+                select::Either::First(ButtonEvent::Click3) => {
                     blink(1).await;
                     unlock_torch();
                     saved_level = DEFAULT_LEVEL;

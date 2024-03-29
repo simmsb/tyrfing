@@ -1,4 +1,7 @@
-use crate::{nonatomic::{NonAtomicBool, NonAtomicU8}, power_levels::PathLevel};
+use crate::{
+    nonatomic::{NonAtomicBool, NonAtomicU8},
+    power_levels::PathLevel,
+};
 use atxtiny_hal::{
     dac::{Dac, Enabled},
     embedded_hal::digital::OutputPin,
@@ -160,13 +163,15 @@ impl PowerPaths {
 
 const INSTANT_STOP_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(60);
 const MAX_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(50);
-const MIN_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(3.2);
+const MIN_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(3.0);
+const INSTANT_STOP_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(2.8);
 
 #[embassy_executor::task]
 pub async fn power_controller(mut paths: PowerPaths) {
     let mut previous_level = 0u8;
 
     let mut accumulated_over_temp = 0u32;
+    let mut accumulated_under_volts = 0u32;
     let mut tick_this_time = true;
 
     loop {
@@ -194,7 +199,7 @@ pub async fn power_controller(mut paths: PowerPaths) {
 
         let volts = crate::sensing::VOLTAGE.get();
 
-        if volts < MIN_VOLTS {
+        if volts < INSTANT_STOP_VOLTS {
             actual_level = 0;
         }
 
@@ -208,12 +213,15 @@ pub async fn power_controller(mut paths: PowerPaths) {
             let temp_diff = (temp as i32) - (MAX_TEMP.0 as i32);
 
             accumulated_over_temp = accumulated_over_temp.saturating_add_signed(temp_diff);
+
+            accumulated_under_volts = accumulated_under_volts
+                .saturating_add_signed(if volts < MIN_VOLTS { 1 } else { -1 });
         }
 
         const TICKS_PER_SEC: u32 = 100;
-        let power_decrease = (10 * accumulated_over_temp) / (64 * TICKS_PER_SEC * 5);
+        let power_decrease = accumulated_under_volts.saturating_add((accumulated_over_temp) / (64 * TICKS_PER_SEC * 2));
 
-        // decrease level by 10 for every second of 5c over temp?
+        // decrease level by 1 for every two seconds of 1c over temp
 
         actual_level = actual_level.saturating_sub(power_decrease as u8);
 

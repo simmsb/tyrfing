@@ -66,7 +66,12 @@ pub enum ButtonState {
     Press,
 }
 
-pub static BUTTON_STATES: embassy_sync::signal::Signal<
+static BUTTON_STATES: embassy_sync::signal::Signal<
+    embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
+    ButtonState,
+> = embassy_sync::signal::Signal::new();
+
+pub static LOCKOUT_BUTTON_STATES: embassy_sync::signal::Signal<
     embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
     ButtonState,
 > = embassy_sync::signal::Signal::new();
@@ -106,6 +111,7 @@ pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
         // if the button is still pressed after 16ms, consider it debounced and pressed
         if t.pin().is_low().unwrap_infallible() {
             BUTTON_STATES.signal(ButtonState::Press);
+            LOCKOUT_BUTTON_STATES.signal(ButtonState::Press);
             crate::serial_println!("Got button: {}", v);
             // crate::power::set_level_gradual(if v { 255 } else { 0 });
         } else {
@@ -128,6 +134,7 @@ pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
             // debounced and depressed
             if t.pin().is_high().unwrap_infallible() {
                 BUTTON_STATES.signal(ButtonState::Depress);
+                LOCKOUT_BUTTON_STATES.signal(ButtonState::Depress);
                 break;
             }
         }
