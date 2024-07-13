@@ -3,7 +3,10 @@ use avr_device::{
     attiny1616::{rtc::pitctrla::PERIOD_A, RTC},
     interrupt::{CriticalSection, Mutex},
 };
-use core::{cell::RefCell, task::Waker};
+use core::{
+    cell::{Cell, RefCell},
+    task::Waker,
+};
 use embassy_time_driver::{AlarmHandle, Driver};
 use embassy_time_queue_driver::TimerQueue;
 
@@ -32,16 +35,14 @@ struct Alarm {
     ctx: *mut (),
 }
 
-static mut IN_PROGRESS: bool = false;
+static IN_PROGRESS: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
 
-pub fn mark_in_progress(_: CriticalSection) -> bool {
-    unsafe { !core::ptr::replace(core::ptr::addr_of_mut!(IN_PROGRESS), true) }
+pub fn mark_in_progress(cs: CriticalSection) -> bool {
+    IN_PROGRESS.borrow(cs).replace(true)
 }
 
-pub fn mark_finished(_: CriticalSection) {
-    unsafe {
-        IN_PROGRESS = false;
-    }
+pub fn mark_finished(cs: CriticalSection) {
+    IN_PROGRESS.borrow(cs).set(false);
 }
 
 mod timer_queue {
@@ -99,68 +100,79 @@ mod timer_queue {
 }
 
 mod wake_queue {
-    use core::task::Waker;
+    use core::{
+        cell::Cell,
+        task::Waker,
+    };
 
-    use avr_device::interrupt::CriticalSection;
+    use avr_device::interrupt::{CriticalSection, Mutex};
 
-    use super::{NonMaxU8, Time, QUEUE_SIZE};
+    use super::{Time, QUEUE_SIZE};
 
-    static mut TAKEN: [bool; QUEUE_SIZE] = [false; QUEUE_SIZE];
-    static mut ATS: [Time; QUEUE_SIZE] = [0; QUEUE_SIZE];
-    const X: Option<Waker> = None;
-    static mut WAKERS: [Option<Waker>; QUEUE_SIZE] = [X; QUEUE_SIZE];
+    struct Entry {
+        at: Time,
+        waker: Waker,
+    }
 
-    pub fn allocate(_: CriticalSection, waker: &Waker) -> Option<(NonMaxU8, bool)> {
-        unsafe {
-            for i in 0..QUEUE_SIZE {
-                if TAKEN[i] && WAKERS[i].as_ref().map_or(false, |w| w.will_wake(waker)) {
-                    return Some((NonMaxU8(i as u8), true));
+    static ENTRIES: [Mutex<Cell<Option<Entry>>>; QUEUE_SIZE] =
+        [const { Mutex::new(Cell::new(None)) }; QUEUE_SIZE];
+
+    pub fn allocate(cs: CriticalSection, at: Time, waker: &Waker) {
+        for entry in &ENTRIES {
+            let entry = entry.borrow(cs);
+            let e = entry.replace(None);
+
+            if let Some(mut e) = e {
+                // waker is the same, simply store back the earliest time
+                if e.waker.will_wake(waker) {
+                    e.at = at.min(e.at);
+
+                    entry.set(Some(e));
+                    return;
+                } else {
+                    entry.set(Some(e));
                 }
             }
-            for i in 0..QUEUE_SIZE {
-                if !TAKEN[i] {
-                    TAKEN[i] = true;
-                    return Some((NonMaxU8(i as u8), false));
-                }
-            }
-
-            None
         }
+
+        for entry in &ENTRIES {
+            let entry = entry.borrow(cs);
+            let e = entry.replace(None);
+
+            if e.is_some() {
+                entry.set(e);
+                continue;
+            }
+
+            entry.set(Some(Entry { at, waker: waker.clone() }));
+
+            return;
+        }
+
+        panic!("queue full");
     }
 
     pub fn process(ticks_elapsed: Time) {
-        unsafe {
-            for i in 0..QUEUE_SIZE {
-                if !TAKEN[i] {
-                    continue;
-                }
+        for entry in &ENTRIES {
+            let w = avr_device::interrupt::free(|cs| {
+                let entry = entry.borrow(cs);
+                let e = entry.replace(None);
 
-                if ATS[i] <= ticks_elapsed {
-                    let w = WAKERS[i].take();
-
-                    TAKEN[i] = false;
-
-                    if let Some(w) = w {
-                        w.wake();
+                if let Some(e) = e {
+                    if e.at <= ticks_elapsed {
+                        return Some(e.waker);
+                    } else {
+                        entry.set(Some(e));
                     }
                 }
+
+                None
+            });
+
+            if let Some(w) = w {
+                w.wake();
             }
         }
-    }
-
-    pub fn set_at(_: CriticalSection, id: NonMaxU8, v: Time, set_to_min: bool) {
-        unsafe {
-            let at = ATS.get_unchecked_mut(id.0 as usize);
-            if set_to_min {
-                *at = (*at).min(v);
-            } else {
-                *at = v;
-            }
-        }
-    }
-
-    pub fn set_waker(_: CriticalSection, id: NonMaxU8, w: Option<Waker>) {
-        unsafe { *WAKERS.get_unchecked_mut(id.0 as usize) = w }
     }
 }
 
@@ -195,12 +207,7 @@ impl TimerQueue for AvrTc0EmbassyTimeDriver {
     // #[inline(never)]
     fn schedule_wake(&'static self, at: Time, waker: &Waker) {
         avr_device::interrupt::free(|t| {
-            let Some((id, already_present)) = wake_queue::allocate(t, waker) else {
-                panic!("queue full");
-            };
-
-            wake_queue::set_waker(t, id, Some(waker.clone()));
-            wake_queue::set_at(t, id, at, already_present);
+            wake_queue::allocate(t, at, waker);
         })
     }
 }
