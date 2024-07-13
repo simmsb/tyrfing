@@ -38,7 +38,7 @@ struct Alarm {
 static IN_PROGRESS: Mutex<Cell<bool>> = Mutex::new(Cell::new(false));
 
 pub fn mark_in_progress(cs: CriticalSection) -> bool {
-    IN_PROGRESS.borrow(cs).replace(true)
+    !IN_PROGRESS.borrow(cs).replace(true)
 }
 
 pub fn mark_finished(cs: CriticalSection) {
@@ -285,7 +285,9 @@ pub unsafe fn handle_tick() {
     }
 
     avr_device::interrupt::free(|t| {
-        mark_finished(t);
+        if should_process {
+            mark_finished(t);
+        }
         let mut state = INTERRUPT_STATE.borrow(t).borrow_mut();
         state.as_mut().unwrap().counter.clear_interrupt();
     });
