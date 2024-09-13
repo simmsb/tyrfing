@@ -15,7 +15,7 @@ pub type Time = u32;
 #[cfg(not(feature = "time_u32"))]
 pub type Time = u64;
 
-pub static mut TICKS_ELAPSED: Time = 0;
+pub static TICKS_ELAPSED: Mutex<Cell<Time>> = Mutex::new(Cell::new(0));
 
 pub struct AvrTc0EmbassyTimeDriver {}
 
@@ -179,7 +179,7 @@ mod wake_queue {
 impl Driver for AvrTc0EmbassyTimeDriver {
     #[inline(always)]
     fn now(&self) -> Time {
-        avr_hal_generic::avr_device::interrupt::free(|_| unsafe { TICKS_ELAPSED })
+        avr_hal_generic::avr_device::interrupt::free(|cs| TICKS_ELAPSED.borrow(cs).get() )
     }
 
     unsafe fn allocate_alarm(&self) -> Option<AlarmHandle> {
@@ -268,14 +268,14 @@ pub fn enter_wake_clock() {
 #[inline(always)]
 pub unsafe fn handle_tick() {
     let (should_process, ticks_elapsed) = avr_device::interrupt::free(|t| {
-        let elapsed = TICKS_ELAPSED
+        let elapsed = TICKS_ELAPSED.borrow(t).get()
             + INTERRUPT_STATE
                 .borrow(t)
                 .borrow()
                 .as_ref()
                 .unwrap()
                 .ticks_per_count as u32;
-        TICKS_ELAPSED = elapsed;
+        TICKS_ELAPSED.borrow(t).set(elapsed);
         (mark_in_progress(t), elapsed)
     });
 
@@ -297,7 +297,7 @@ pub fn init_system_time(tc: RTC) {
     unsafe {
         avr_device::interrupt::enable();
         avr_device::interrupt::free(|t| {
-            TICKS_ELAPSED = 0;
+            TICKS_ELAPSED.borrow(t).set(0);
 
             let pitconfig = TICK_CONFIG_64;
 

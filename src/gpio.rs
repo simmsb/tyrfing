@@ -15,18 +15,18 @@ const PORTA_PIN_COUNT: usize = 8;
 const PORTB_PIN_COUNT: usize = 8;
 const PORTC_PIN_COUNT: usize = 6;
 
-const NEW_AW: AtomicWaker = AtomicWaker::new();
-
 static WAKERS: [AtomicWaker; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT] =
-    [NEW_AW; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT];
+    [const { AtomicWaker::new() }; PORTA_PIN_COUNT + PORTB_PIN_COUNT + PORTC_PIN_COUNT];
 
 fn get_waker(port: u8, pin: u8) -> &'static AtomicWaker {
-    unsafe {
-        // hah
-        WAKERS.get_unchecked((port * PORTA_PIN_COUNT as u8 + pin) as usize)
-    }
+    &WAKERS[(port * PORTA_PIN_COUNT as u8 + pin) as usize]
+    // omitting the bounds check saves only 8 bytes, it'd be ideal if it could
+    // be elided.
+    //
+    // unsafe { WAKERS.get_unchecked((port * PORTA_PIN_COUNT as u8 + pin) as usize) }
 }
 
+// Helper trait used for its vtable
 trait GpioInt {
     fn is_pending(&self, n: u8) -> bool;
     fn clear(&self, n: u8);
@@ -34,6 +34,7 @@ trait GpioInt {
 
 impl<T: GpioRegExt> GpioInt for T {
     fn is_pending(&self, n: u8) -> bool {
+        // we need this proxy method as GpioRegExt isn't object safe
         self.interrupt_pending(n)
     }
 
@@ -91,18 +92,8 @@ impl<Gpio, Index, Mode> Pin<Gpio, Index, Mode> {
 impl<Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::Index>
     Pin<Gpio, Index, Input>
 {
-    pub async fn wait(&mut self, edge: Edge) {
-        let is_high = self.0.is_high().unwrap_infallible();
-        if match edge {
-            Edge::Rising => is_high,
-            Edge::Falling => !is_high,
-            Edge::RisingFalling => false,
-            Edge::LowLevel => !is_high,
-        } {
-            return;
-        }
-
-        InputFuture::new(self.into_ref(), edge).await;
+    pub fn wait(&mut self, edge: Edge) -> impl Future<Output = ()> + '_ {
+        InputFuture::new(self.into_ref(), edge)
     }
 
     pub fn wait_high(&mut self) -> impl Future<Output = ()> + '_ {
@@ -116,7 +107,6 @@ impl<Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::In
 
 struct InputFuture<'d, Gpio, Index> {
     pin: PeripheralRef<'d, Pin<Gpio, Index, Input>>,
-    // waker: &'static AtomicWaker,
 }
 
 impl<'d, Gpio: atxtiny_hal::gpio::marker::Gpio, Index: atxtiny_hal::gpio::marker::Index>

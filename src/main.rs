@@ -49,7 +49,7 @@ use adc::AdcExt as _;
 macro_rules! powersave_pins {
     ($($pin:expr),* $(,)?) => {
         {
-            $($pin.into_pull_up_input();)*
+            $(::core::mem::forget($pin.into_pull_up_input());)*
         }
     };
 }
