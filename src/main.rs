@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(const_trait_impl)]
 #![feature(type_alias_impl_trait)]
+#![feature(impl_trait_in_assoc_type)]
 #![feature(abi_avr_interrupt)]
 #![feature(rustc_attrs)]
 #![feature(inline_const)]

@@ -63,7 +63,8 @@ async fn main(spawner: Spawner) {
         w5500_int,
         w5500_reset,
     )
-    .await;
+    .await
+    .unwrap();
     unwrap!(spawner.spawn(ethernet_task(runner)));
 
     // Generate random seed
@@ -71,11 +72,11 @@ async fn main(spawner: Spawner) {
 
     // Init network stack
     static STACK: StaticCell<Stack<Device<'static>>> = StaticCell::new();
-    static RESOURCES: StaticCell<StackResources<2>> = StaticCell::new();
+    static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
     let stack = &*STACK.init(Stack::new(
         device,
         embassy_net::Config::dhcpv4(Default::default()),
-        RESOURCES.init(StackResources::<2>::new()),
+        RESOURCES.init(StackResources::new()),
         seed,
     ));
 

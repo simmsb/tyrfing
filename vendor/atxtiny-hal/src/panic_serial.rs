@@ -17,16 +17,13 @@ pub fn _print_panic<W: uWrite>(w: &mut W, info: &PanicInfo) {
     if let Some(location) = info.location() {
         _ = ufmt::uwrite!(w, "Panic at {}:{}:{}", location.file(), location.line(), location.column());
         if !cfg!(feature="fullpanic") {
-            _ = w.write_str("\r\n");
+            _ = uWrite::write_str(w, "\r\n");
         }
     }
 
     if cfg!(feature="fullpanic") {
-        if let Some(message) = info.message() {
-            _ = w.write_str(": ");
-            _ = core::fmt::write(&mut WriteWrapper(w), *message);
-            _ = w.write_str("\r\n");
-        }
+        let msg = info.message();
+        _ = core::writeln!(WriteWrapper(w), ": {}", msg);
     }
 }
 

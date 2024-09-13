@@ -2,6 +2,7 @@
 #![no_main]
 teleprobe_meta::target!(b"rpi-pico");
 
+use cyw43::JoinOptions;
 use cyw43_pio::PioSpi;
 use defmt::{panic, *};
 use embassy_executor::Spawner;
@@ -45,8 +46,8 @@ async fn main(spawner: Spawner) {
     }
 
     // cyw43 firmware needs to be flashed manually:
-    //     probe-rs download 43439A0.bin     --format bin --chip RP2040 --base-address 0x101b0000
-    //     probe-rs download 43439A0_clm.bin --format bin --chip RP2040 --base-address 0x101f8000
+    //     probe-rs download 43439A0.bin --binary-format bin --chip RP2040 --base-address 0x101b0000
+    //     probe-rs download 43439A0_clm.bin --binary-format bin --chip RP2040 --base-address 0x101f8000
     let fw = unsafe { core::slice::from_raw_parts(0x101b0000 as *const u8, 230321) };
     let clm = unsafe { core::slice::from_raw_parts(0x101f8000 as *const u8, 4752) };
 
@@ -74,14 +75,17 @@ async fn main(spawner: Spawner) {
     let stack = &*STACK.init(Stack::new(
         net_device,
         Config::dhcpv4(Default::default()),
-        RESOURCES.init(StackResources::<2>::new()),
+        RESOURCES.init(StackResources::new()),
         seed,
     ));
 
     unwrap!(spawner.spawn(net_task(stack)));
 
     loop {
-        match control.join_wpa2(WIFI_NETWORK, WIFI_PASSWORD).await {
+        match control
+            .join(WIFI_NETWORK, JoinOptions::new(WIFI_PASSWORD.as_bytes()))
+            .await
+        {
             Ok(_) => break,
             Err(err) => {
                 panic!("join failed with status={}", err.status);

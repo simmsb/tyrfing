@@ -1,3 +1,4 @@
+// required-features: nrf52840
 #![no_std]
 #![no_main]
 teleprobe_meta::target!(b"nrf52840-dk");
@@ -90,7 +91,7 @@ async fn main(spawner: Spawner) {
     let stack = &*STACK.init(Stack::new(
         device,
         Config::dhcpv4(Default::default()),
-        RESOURCES.init(StackResources::<2>::new()),
+        RESOURCES.init(StackResources::new()),
         seed,
     ));
 

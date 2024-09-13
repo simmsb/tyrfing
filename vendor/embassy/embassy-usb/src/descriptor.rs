@@ -13,6 +13,8 @@ pub mod descriptor_type {
     pub const STRING: u8 = 3;
     pub const INTERFACE: u8 = 4;
     pub const ENDPOINT: u8 = 5;
+    pub const DEVICE_QUALIFIER: u8 = 6;
+    pub const OTHER_SPEED_CONFIGURATION: u8 = 7;
     pub const IAD: u8 = 11;
     pub const BOS: u8 = 15;
     pub const CAPABILITY: u8 = 16;
@@ -80,30 +82,6 @@ impl<'a> DescriptorWriter<'a> {
         self.buf[start..start + length].copy_from_slice(descriptor);
 
         self.position = start + length;
-    }
-
-    pub(crate) fn device(&mut self, config: &Config) {
-        self.write(
-            descriptor_type::DEVICE,
-            &[
-                0x10,
-                0x02,                     // bcdUSB 2.1
-                config.device_class,      // bDeviceClass
-                config.device_sub_class,  // bDeviceSubClass
-                config.device_protocol,   // bDeviceProtocol
-                config.max_packet_size_0, // bMaxPacketSize0
-                config.vendor_id as u8,
-                (config.vendor_id >> 8) as u8, // idVendor
-                config.product_id as u8,
-                (config.product_id >> 8) as u8, // idProduct
-                config.device_release as u8,
-                (config.device_release >> 8) as u8,    // bcdDevice
-                config.manufacturer.map_or(0, |_| 1),  // iManufacturer
-                config.product.map_or(0, |_| 2),       // iProduct
-                config.serial_number.map_or(0, |_| 3), // iSerialNumber
-                1,                                     // bNumConfigurations
-            ],
-        );
     }
 
     pub(crate) fn configuration(&mut self, config: &Config) {
@@ -269,6 +247,52 @@ impl<'a> DescriptorWriter<'a> {
     }
 }
 
+/// Create a new Device Descriptor array.
+///
+/// All device descriptors are always 18 bytes, so there's no need for
+/// a variable-length buffer or DescriptorWriter.
+pub(crate) fn device_descriptor(config: &Config) -> [u8; 18] {
+    [
+        18,   // bLength
+        0x01, // bDescriptorType
+        0x10,
+        0x02,                     // bcdUSB 2.1
+        config.device_class,      // bDeviceClass
+        config.device_sub_class,  // bDeviceSubClass
+        config.device_protocol,   // bDeviceProtocol
+        config.max_packet_size_0, // bMaxPacketSize0
+        config.vendor_id as u8,
+        (config.vendor_id >> 8) as u8, // idVendor
+        config.product_id as u8,
+        (config.product_id >> 8) as u8, // idProduct
+        config.device_release as u8,
+        (config.device_release >> 8) as u8,    // bcdDevice
+        config.manufacturer.map_or(0, |_| 1),  // iManufacturer
+        config.product.map_or(0, |_| 2),       // iProduct
+        config.serial_number.map_or(0, |_| 3), // iSerialNumber
+        1,                                     // bNumConfigurations
+    ]
+}
+
+/// Create a new Device Qualifier Descriptor array.
+///
+/// All device qualifier descriptors are always 10 bytes, so there's no need for
+/// a variable-length buffer or DescriptorWriter.
+pub(crate) fn device_qualifier_descriptor(config: &Config) -> [u8; 10] {
+    [
+        10,   // bLength
+        0x06, // bDescriptorType
+        0x10,
+        0x02,                     // bcdUSB 2.1
+        config.device_class,      // bDeviceClass
+        config.device_sub_class,  // bDeviceSubClass
+        config.device_protocol,   // bDeviceProtocol
+        config.max_packet_size_0, // bMaxPacketSize0
+        1,                        // bNumConfigurations
+        0,                        // Reserved
+    ]
+}
+
 /// A writer for Binary Object Store descriptor.
 pub struct BosWriter<'a> {
     pub(crate) writer: DescriptorWriter<'a>,
@@ -284,6 +308,9 @@ impl<'a> BosWriter<'a> {
     }
 
     pub(crate) fn bos(&mut self) {
+        if (self.writer.buf.len() - self.writer.position) < 5 {
+            return;
+        }
         self.num_caps_mark = Some(self.writer.position + 4);
         self.writer.write(
             descriptor_type::BOS,
@@ -326,6 +353,9 @@ impl<'a> BosWriter<'a> {
     }
 
     pub(crate) fn end_bos(&mut self) {
+        if self.writer.position == 0 {
+            return;
+        }
         self.num_caps_mark = None;
         let position = self.writer.position as u16;
         self.writer.buf[2..4].copy_from_slice(&position.to_le_bytes());

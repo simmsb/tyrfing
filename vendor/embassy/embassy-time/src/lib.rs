@@ -32,7 +32,7 @@ pub use delay::{block_for, Delay};
 pub use duration::Duration;
 pub use embassy_time_driver::TICK_HZ;
 pub use instant::Instant;
-pub use timer::{with_timeout, Ticker, TimeoutError, Timer};
+pub use timer::{with_deadline, with_timeout, Ticker, TimeoutError, Timer, WithTimeout};
 
 const fn gcd(a: u32, b: u32) -> u32 {
     if b == 0 {
@@ -46,5 +46,20 @@ pub(crate) const GCD_1K: u32 = gcd(TICK_HZ, 1_000);
 pub(crate) const GCD_1M: u32 = gcd(TICK_HZ, 1_000_000);
 pub(crate) const GCD_1G: u32 = gcd(TICK_HZ, 1_000_000_000);
 
-#[cfg(feature = "defmt-timestamp-uptime")]
+#[cfg(feature = "defmt-timestamp-uptime-s")]
+defmt::timestamp! {"{=u32}", Instant::now().as_secs() }
+
+#[cfg(feature = "defmt-timestamp-uptime-ms")]
+defmt::timestamp! {"{=u32:ms}", Instant::now().as_millis() }
+
+#[cfg(any(feature = "defmt-timestamp-uptime", feature = "defmt-timestamp-uptime-us"))]
 defmt::timestamp! {"{=u32:us}", Instant::now().as_micros() }
+
+#[cfg(feature = "defmt-timestamp-uptime-ts")]
+defmt::timestamp! {"{=u32:ts}", Instant::now().as_secs() }
+
+#[cfg(feature = "defmt-timestamp-uptime-tms")]
+defmt::timestamp! {"{=u32:tms}", Instant::now().as_millis() }
+
+#[cfg(feature = "defmt-timestamp-uptime-tus")]
+defmt::timestamp! {"{=u32:tus}", Instant::now().as_micros() }

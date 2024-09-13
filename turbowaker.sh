@@ -18,15 +18,16 @@ cp $core/Cargo.toml $core/Cargo.toml.turbo-bak
 cp $core/src/task/wake.rs $core/src/task/wake.rs.turbo-bak 
 
 patch $core/Cargo.toml <<"EOF"
-*** Cargo.toml.turbo-bak	2023-03-07 00:26:08.627557642 +0100
---- Cargo.toml	2023-03-07 00:26:54.764578210 +0100
-***************
-*** 33,35 ****
---- 33,36 ----
-  # Make `RefCell` store additional debugging information, which is printed out when
-  # a borrow error occurs
-  debug_refcell = []
-+ turbowakers = []
+*** Cargo.toml.turbo-bak        2023-03-07 00:26:08.627557642 +0100
+--- Cargo.toml  2023-03-07 00:26:54.764578210 +0100
+@@ -36,6 +36,7 @@ optimize_for_size = []
+ # Make `RefCell` store additional debugging information, which is printed out when
+ # a borrow error occurs
+ debug_refcell = []
++turbowakers = []
+
+ [lints.rust.unexpected_cfgs]
+ level = "warn"
 EOF
 
 patch $core/src/task/wake.rs <<"EOF"
@@ -127,7 +128,7 @@ index 8fc942d..92fcfce 100644
 +        #[inline]
 +        #[must_use]
 +        #[stable(feature = "futures_api", since = "1.36.0")]
-+        #[rustc_const_unstable(feature = "const_waker", issue = "102012")]
++        #[rustc_const_stable(feature = "const_waker", since = "CURRENT_RUSTC_VERSION")]
 +        pub const unsafe fn from_raw(waker: RawWaker) -> Waker {
 +            panic!("Waker::from_raw is unavailable due to enabling turbowakers.");
 +        }
@@ -143,7 +144,7 @@ index 8fc942d..92fcfce 100644
 +        #[inline]
 +        #[must_use]
 +        #[stable(feature = "futures_api", since = "1.36.0")]
-+        #[rustc_const_unstable(feature = "const_waker", issue = "102012")]
++        #[rustc_const_stable(feature = "const_waker", since = "CURRENT_RUSTC_VERSION")]
 +        pub const unsafe fn from_turbo_ptr(ptr: NonNull<()>) -> Waker {
 +            Self { ptr }
 +        }

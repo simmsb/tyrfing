@@ -1,3 +1,4 @@
+// required-features: nrf52840
 #![no_std]
 #![no_main]
 teleprobe_meta::target!(b"ak-gwe-r7");
@@ -66,12 +67,7 @@ async fn main(spawner: Spawner) {
     // Init network stack
     static STACK: StaticCell<Stack<MyDriver>> = StaticCell::new();
     static RESOURCES: StaticCell<StackResources<2>> = StaticCell::new();
-    let stack = &*STACK.init(Stack::new(
-        device,
-        config,
-        RESOURCES.init(StackResources::<2>::new()),
-        seed,
-    ));
+    let stack = &*STACK.init(Stack::new(device, config, RESOURCES.init(StackResources::new()), seed));
 
     unwrap!(spawner.spawn(net_task(stack)));
 

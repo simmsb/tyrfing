@@ -79,6 +79,15 @@ impl<'a> TcpReader<'a> {
     ///
     /// Returns how many bytes were read, or an error. If no data is available, it waits
     /// until there is at least one byte available.
+    ///
+    /// # Note
+    /// A return value of Ok(0) means that we have read all data and the remote
+    /// side has closed our receive half of the socket. The remote can no longer
+    /// send bytes.
+    ///
+    /// The send half of the socket is still open. If you want to reconnect using
+    /// the socket you split this reader off the send half needs to be closed using
+    /// [`abort()`](TcpSocket::abort).
     pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
         self.io.read(buf).await
     }
@@ -97,6 +106,13 @@ impl<'a> TcpReader<'a> {
     /// Return the maximum number of bytes inside the transmit buffer.
     pub fn recv_capacity(&self) -> usize {
         self.io.recv_capacity()
+    }
+
+    /// Return the amount of octets queued in the receive buffer. This value can be larger than
+    /// the slice read by the next `recv` or `peek` call because it includes all queued octets,
+    /// and not only the octets that may be returned as a contiguous slice.
+    pub fn recv_queue(&self) -> usize {
+        self.io.recv_queue()
     }
 }
 
@@ -132,6 +148,11 @@ impl<'a> TcpWriter<'a> {
     pub fn send_capacity(&self) -> usize {
         self.io.send_capacity()
     }
+
+    /// Return the amount of octets queued in the transmit buffer.
+    pub fn send_queue(&self) -> usize {
+        self.io.send_queue()
+    }
 }
 
 impl<'a> TcpSocket<'a> {
@@ -161,6 +182,18 @@ impl<'a> TcpSocket<'a> {
     /// Return the maximum number of bytes inside the transmit buffer.
     pub fn send_capacity(&self) -> usize {
         self.io.send_capacity()
+    }
+
+    /// Return the amount of octets queued in the transmit buffer.
+    pub fn send_queue(&self) -> usize {
+        self.io.send_queue()
+    }
+
+    /// Return the amount of octets queued in the receive buffer. This value can be larger than
+    /// the slice read by the next `recv` or `peek` call because it includes all queued octets,
+    /// and not only the octets that may be returned as a contiguous slice.
+    pub fn recv_queue(&self) -> usize {
+        self.io.recv_queue()
     }
 
     /// Call `f` with the largest contiguous slice of octets in the transmit buffer,
@@ -249,6 +282,9 @@ impl<'a> TcpSocket<'a> {
     ///
     /// Returns how many bytes were read, or an error. If no data is available, it waits
     /// until there is at least one byte available.
+    ///
+    /// A return value of Ok(0) means that the socket was closed and is longer
+    /// able to receive any data.
     pub async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
         self.io.read(buf).await
     }
@@ -273,6 +309,10 @@ impl<'a> TcpSocket<'a> {
     ///
     /// If the timeout is set, the socket will be closed if no data is received for the
     /// specified duration.
+    ///
+    /// # Note:
+    /// Set a keep alive interval ([`set_keep_alive`] to prevent timeouts when
+    /// the remote could still respond.
     pub fn set_timeout(&mut self, duration: Option<Duration>) {
         self.io
             .with_mut(|s, _| s.set_timeout(duration.map(duration_to_smoltcp)))
@@ -284,6 +324,9 @@ impl<'a> TcpSocket<'a> {
     /// the specified duration of inactivity.
     ///
     /// If not set, the socket will not send keep-alive packets.
+    ///
+    /// By setting a [`timeout`](Self::timeout) larger then the keep alive you
+    /// can detect a remote endpoint that no longer answers.
     pub fn set_keep_alive(&mut self, interval: Option<Duration>) {
         self.io
             .with_mut(|s, _| s.set_keep_alive(interval.map(duration_to_smoltcp)))
@@ -342,7 +385,7 @@ impl<'a> TcpSocket<'a> {
         self.io.with(|s, _| s.may_send())
     }
 
-    /// return whether the recieve half of the full-duplex connection is open.
+    /// return whether the receive half of the full-duplex connection is open.
     /// This function returns true if it’s possible to receive data from the remote endpoint.
     /// It will return true while there is data in the receive buffer, and if there isn’t,
     /// as long as the remote endpoint has not closed the connection.
@@ -471,7 +514,7 @@ impl<'d> TcpIo<'d> {
                         s.register_recv_waker(cx.waker());
                         Poll::Pending
                     } else {
-                        // if we can't receive because the recieve half of the duplex connection is closed then return an error
+                        // if we can't receive because the receive half of the duplex connection is closed then return an error
                         Poll::Ready(Err(Error::ConnectionReset))
                     }
                 } else {
@@ -491,10 +534,16 @@ impl<'d> TcpIo<'d> {
     async fn flush(&mut self) -> Result<(), Error> {
         poll_fn(move |cx| {
             self.with_mut(|s, _| {
-                let waiting_close = s.state() == tcp::State::Closed && s.remote_endpoint().is_some();
+                let data_pending = (s.send_queue() > 0) && s.state() != tcp::State::Closed;
+                let fin_pending = matches!(
+                    s.state(),
+                    tcp::State::FinWait1 | tcp::State::Closing | tcp::State::LastAck
+                );
+                let rst_pending = s.state() == tcp::State::Closed && s.remote_endpoint().is_some();
+
                 // If there are outstanding send operations, register for wake up and wait
                 // smoltcp issues wake-ups when octets are dequeued from the send buffer
-                if s.send_queue() > 0 || waiting_close {
+                if data_pending || fin_pending || rst_pending {
                     s.register_send_waker(cx.waker());
                     Poll::Pending
                 // No outstanding sends, socket is flushed
@@ -512,6 +561,14 @@ impl<'d> TcpIo<'d> {
 
     fn send_capacity(&self) -> usize {
         self.with(|s, _| s.send_capacity())
+    }
+
+    fn send_queue(&self) -> usize {
+        self.with(|s, _| s.send_queue())
+    }
+
+    fn recv_queue(&self) -> usize {
+        self.with(|s, _| s.recv_queue())
     }
 }
 
@@ -549,7 +606,7 @@ mod embedded_io_impls {
 
     impl<'d> embedded_io_async::ReadReady for TcpSocket<'d> {
         fn read_ready(&mut self) -> Result<bool, Self::Error> {
-            Ok(self.io.with(|s, _| s.may_recv()))
+            Ok(self.io.with(|s, _| s.can_recv() || !s.may_recv()))
         }
     }
 
@@ -565,7 +622,7 @@ mod embedded_io_impls {
 
     impl<'d> embedded_io_async::WriteReady for TcpSocket<'d> {
         fn write_ready(&mut self) -> Result<bool, Self::Error> {
-            Ok(self.io.with(|s, _| s.may_send()))
+            Ok(self.io.with(|s, _| s.can_send()))
         }
     }
 
@@ -581,7 +638,7 @@ mod embedded_io_impls {
 
     impl<'d> embedded_io_async::ReadReady for TcpReader<'d> {
         fn read_ready(&mut self) -> Result<bool, Self::Error> {
-            Ok(self.io.with(|s, _| s.may_recv()))
+            Ok(self.io.with(|s, _| s.can_recv() || !s.may_recv()))
         }
     }
 
@@ -601,7 +658,7 @@ mod embedded_io_impls {
 
     impl<'d> embedded_io_async::WriteReady for TcpWriter<'d> {
         fn write_ready(&mut self) -> Result<bool, Self::Error> {
-            Ok(self.io.with(|s, _| s.may_send()))
+            Ok(self.io.with(|s, _| s.can_send()))
         }
     }
 }
@@ -622,12 +679,25 @@ pub mod client {
     pub struct TcpClient<'d, D: Driver, const N: usize, const TX_SZ: usize = 1024, const RX_SZ: usize = 1024> {
         stack: &'d Stack<D>,
         state: &'d TcpClientState<N, TX_SZ, RX_SZ>,
+        socket_timeout: Option<Duration>,
     }
 
     impl<'d, D: Driver, const N: usize, const TX_SZ: usize, const RX_SZ: usize> TcpClient<'d, D, N, TX_SZ, RX_SZ> {
         /// Create a new `TcpClient`.
         pub fn new(stack: &'d Stack<D>, state: &'d TcpClientState<N, TX_SZ, RX_SZ>) -> Self {
-            Self { stack, state }
+            Self {
+                stack,
+                state,
+                socket_timeout: None,
+            }
+        }
+
+        /// Set the timeout for each socket created by this `TcpClient`.
+        ///
+        /// If the timeout is set, the socket will be closed if no data is received for the
+        /// specified duration.
+        pub fn set_timeout(&mut self, timeout: Option<Duration>) {
+            self.socket_timeout = timeout;
         }
     }
 
@@ -653,6 +723,7 @@ pub mod client {
             };
             let remote_endpoint = (addr, remote.port());
             let mut socket = TcpConnection::new(&self.stack, self.state)?;
+            socket.socket.set_timeout(self.socket_timeout.clone());
             socket
                 .socket
                 .connect(remote_endpoint)

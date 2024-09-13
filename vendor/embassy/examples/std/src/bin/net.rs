@@ -1,5 +1,3 @@
-use std::default::Default;
-
 use clap::Parser;
 use embassy_executor::{Executor, Spawner};
 use embassy_net::tcp::TcpSocket;
@@ -54,12 +52,7 @@ async fn main_task(spawner: Spawner) {
     // Init network stack
     static STACK: StaticCell<Stack<TunTapDevice>> = StaticCell::new();
     static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
-    let stack = &*STACK.init(Stack::new(
-        device,
-        config,
-        RESOURCES.init(StackResources::<3>::new()),
-        seed,
-    ));
+    let stack = &*STACK.init(Stack::new(device, config, RESOURCES.init(StackResources::new()), seed));
 
     // Launch network task
     spawner.spawn(net_task(stack)).unwrap();
