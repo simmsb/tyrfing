@@ -2,15 +2,6 @@
 
 use ufmt::uWrite;
 use core::panic::PanicInfo;
-use core::fmt::Write;
-
-struct WriteWrapper<'a, W: uWrite>(&'a mut W);
-
-impl<'a, W: uWrite> Write for WriteWrapper<'a, W> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        self.0.write_str(s).map_err(|_| core::fmt::Error)
-    }
-}
 
 /// Called internally by the panic handler.
 pub fn _print_panic<W: uWrite>(w: &mut W, info: &PanicInfo) {
@@ -22,8 +13,11 @@ pub fn _print_panic<W: uWrite>(w: &mut W, info: &PanicInfo) {
     }
 
     if cfg!(feature="fullpanic") {
-        let msg = info.message();
-        _ = core::writeln!(WriteWrapper(w), ": {}", msg);
+        if let Some(message) = info.message().as_str() {
+            _ = w.write_str(": ");
+            _ = w.write_str(message);
+            _ = w.write_str("\r\n");
+        }
     }
 }
 
