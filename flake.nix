@@ -5,7 +5,6 @@
 
     crane = {
       url = "github:ipetkov/crane";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     fenix = {
@@ -31,31 +30,78 @@
       ];
       perSystem = { config, pkgs, system, lib, ... }:
         let
-          # avr-toolchain = fenix.packages.${system}.fromToolchainFile {
-          #   file = ./rust-toolchain.toml;
-          #   sha256 = "";
-          # };
-          # native-toolchain = fenix.packages.${system}.complete.withComponents [
-          #   "cargo"
-          #   "clippy"
-          #   "rust-src"
-          #   "rustc"
-          #   "rustfmt"
-          # ];
-          # toolchain = fenix.packages.${system}.combine [ avr-toolchain native-toolchain ];
-          # craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
-          # package = { target ? avr-toolchain.target, args ? "", profile ? "release" }: craneLib.buildPackage {
-          #   cargoExtraArgs = "--target ${target} ${args}";
-          #   CARGO_PROFILE = profile;
-          #   src = craneLib.cleanCargoSource (craneLib.path ./.);
-          #   doCheck = false;
-          #   buildInputs = [
-          #     # Add additional build inputs here
-          #   ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-          #     # Additional darwin specific inputs can be set here
-          #     pkgs.libiconv
-          #   ];
-          # };
+          
+          avr-toolchain-plain = fenix.packages.${system}.fromToolchainFile {
+            file = ./rust-toolchain.toml;
+            sha256 = "sha256-RsORFQhrtQVybYaWATQWNpUld1l0NxcUds2jd/YWPlA=";
+          };
+          native-toolchain = (fenix.packages.${system}.complete.withComponents [
+            "cargo"
+            "clippy"
+            # "rust-src"
+            # "rustc"
+            # "rustfmt"
+          ]);
+          avr-toolchain = pkgs.runCommand "turbowaker-rust" { } ''
+            echo "test $out ${avr-toolchain-plain}"
+            cp -RL ${avr-toolchain-plain} $out
+            chmod -R +rwx $out
+
+            echo "doing patch"
+
+            patch $out/lib/rustlib/src/rust/library/core/Cargo.toml ${./turbowaker/Cargo.toml.patch}
+            patch $out/lib/rustlib/src/rust/library/core/src/task/wake.rs ${./turbowaker/wake.rs.patch}
+          '';
+
+
+            toolchain = fenix.packages.${system}.combine [ avr-toolchain native-toolchain ];
+            craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
+
+            src = craneLib.cleanCargoSource ./.;
+
+            package = { target ? "thumbv7em-none-eabihf", args ? "", profile ? "release", defmt ? "off" }: craneLib.buildPackage {
+              inherit src;
+
+              cargoVendorDir = craneLib.vendorMultipleCargoDeps {
+                inherit (craneLib.findCargoFiles src) cargoConfigs;
+                cargoLockList = [
+                  ./Cargo.lock
+
+                  # Unfortunately this approach requires IFD (import-from-derivation)
+                  # otherwise Nix will refuse to read the Cargo.lock from our toolchain
+                  # (unless we build with `--impure`).
+                  #
+                  # Another way around this is to manually copy the rustlib `Cargo.lock`
+                  # to the repo and import it with `./path/to/rustlib/Cargo.lock` which
+                  # will avoid IFD entirely but will require manually keeping the file
+                  # up to date!
+                  "${toolchain}/lib/rustlib/src/rust/library/Cargo.lock"
+                ];
+              };
+
+              cargoExtraArgs = "-Z build-std=core,panic_abort,alloc -Z build-std-features=optimize_for_size,panic_immediate_abort,core/turbowakers --target ${target} ${args}";
+              CARGO_PROFILE = profile;
+              DEFMT_LOG = defmt;
+              pname = "rusty-glove";
+              version = "0.1.0";
+
+              strictDeps = true;
+              doCheck = false;
+              buildInputs = [
+                # Add additional build inputs here
+              ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+                # Additional darwin specific inputs can be set here
+                pkgs.libiconv
+              ];
+            };
+            elf = pkg: name: binname: pkgs.runCommandLocal "mkelf" { } ''
+              mkdir -p $out
+              cp ${pkg}/bin/${name} $out/${binname}.elf
+            '';
+            binary = pkg: name: pkgs.runCommandLocal "mkbinary" { buildInputs = [ pkgs.llvm ]; } ''
+              mkdir -p $out
+              llvm-objcopy -O binary ${pkg}/bin/${name} $out/${name}.bin
+            '';
           avrlibc = pkgs.pkgsCross.avr.libcCross;
           dfp = pkgs.fetchzip {
             url = "http://packs.download.atmel.com/Atmel.ATtiny_DFP.2.0.368.atpack";
@@ -90,8 +136,8 @@
         in
         # rec
         {
-          devShells.default = pkgs.mkShell {
-            nativeBuildInputs = with pkgs; [
+          devShells.default = craneLib.devShell {
+            packages = with pkgs; [
               pkgsCross.avr.libcCross
               pkgsCross.avr.buildPackages.binutils
               #pkgsCross.avr.buildPackages.gcc-unwrapped 
@@ -107,6 +153,10 @@
             AVR_LDFLAGS = avr_incflags;
             ATTINY_DFP = dfp;
           };
+
+          # packages.bin = package {
+          #       args = "";
+          #     };
 
           # devShells.default = pkgs.pkgsCross.avr.mkShell {
           #

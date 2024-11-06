@@ -20,17 +20,19 @@ mode_fade = []
 [dependencies]
 avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-section-impl"] }
 
-# embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["nightly", "arch-avr", "executor-thread" ]  }
-# embassy-time = { git = "https://github.com/embassy-rs/embassy", version = "0.3.0" }
-# embassy-time-driver = { git = "https://github.com/embassy-rs/embassy", version = "0.1.0", features = ["tick-hz-250"] }
-# embassy-time-queue-driver = { version = "0.1.0", git = "https://github.com/embassy-rs/embassy" }
+embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], git = "https://github.com/simmsb/embassy", branch = "32bit" }
+embassy-time = { git = "https://github.com/simmsb/embassy", branch = "32bit" }
+embassy-time-driver = { features = ["tick-hz-1_024"], git = "https://github.com/simmsb/embassy", branch = "32bit" }
+embassy-time-queue-driver = { git = "https://github.com/simmsb/embassy", branch = "32bit" }
+embassy-sync = { git = "https://github.com/simmsb/embassy", branch = "32bit", features = ["turbowakers"] }
+embassy-futures = { git = "https://github.com/simmsb/embassy", branch = "32bit" }
 
-embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], path = "vendor/embassy/embassy-executor" }
-embassy-time = { version = "0.3.0", path = "vendor/embassy/embassy-time" }
-embassy-time-driver = { version = "0.1.0", features = ["tick-hz-1_024"], path = "vendor/embassy/embassy-time-driver" }
-embassy-time-queue-driver = { version = "0.1.0", path = "vendor/embassy/embassy-time-queue-driver" }
-embassy-sync = { path = "vendor/embassy/embassy-sync", features = ["turbowakers"] }
-embassy-futures = { path = "vendor/embassy/embassy-futures" }
+# embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], path = "vendor/embassy/embassy-executor" }
+# embassy-time = { version = "0.3.0", path = "vendor/embassy/embassy-time" }
+# embassy-time-driver = { version = "0.1.0", features = ["tick-hz-1_024"], path = "vendor/embassy/embassy-time-driver" }
+# embassy-time-queue-driver = { version = "0.1.0", path = "vendor/embassy/embassy-time-queue-driver" }
+# embassy-sync = { path = "vendor/embassy/embassy-sync", features = ["turbowakers"] }
+# embassy-futures = { path = "vendor/embassy/embassy-futures" }
 
 env_int = "0.1.0"
 futures-util = { version = "0.3.30", default-features = false, features = ["portable-atomic"] }
