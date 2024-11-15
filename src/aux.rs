@@ -281,7 +281,7 @@ async fn rainbow_aux(leds: &mut AuxLeds, prior: ColorRGB) -> ColorRGB {
     loop {
         let rgb = hue_to_rgb(h);
 
-        if !crate::power::is_torch_on() {
+        if !crate::states::is_torch_on() {
             return rgb;
         }
 
@@ -353,7 +353,7 @@ async fn voltage_high_aux(leds: &mut AuxLeds, prior: ColorRGB) -> ColorRGB {
     loop {
         let rgb = volts_to_rgb();
 
-        if crate::power::is_torch_on() {
+        if crate::states::is_torch_on() || !crate::states::is_torch_unlocked() {
             return rgb;
         }
 
@@ -389,7 +389,7 @@ async fn aux_control(mut leds: AuxLeds) {
     let mut prior_colour = ColorRGB::Black;
 
     loop {
-        if crate::power::is_torch_on() {
+        if crate::states::is_torch_on() {
             prior_colour = rainbow_aux(&mut leds, prior_colour).await;
         } else if crate::states::is_torch_unlocked() {
             prior_colour = voltage_high_aux(&mut leds, prior_colour).await;

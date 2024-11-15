@@ -1,7 +1,4 @@
-use crate::{
-    nonatomic::{NonAtomicBool, NonAtomicU8},
-    power_levels::PathLevel,
-};
+use crate::{nonatomic::NonAtomicU8, power_levels::PathLevel};
 use atxtiny_hal::{
     dac::{Dac, Enabled},
     embedded_hal::digital::OutputPin,
@@ -18,7 +15,6 @@ use crate::{
 
 static DESIRED_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
 static GRADUAL_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
-static TORCH_IS_ON: NonAtomicBool = NonAtomicBool::new(false);
 
 static POKE_POWER_CONTROLLER: embassy_sync::signal::Signal<
     embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
@@ -48,10 +44,6 @@ pub fn set_level(value: u8) {
 
 pub fn set_level_gradual(value: u8) {
     GRADUAL_LEVEL.store(value);
-}
-
-pub fn is_torch_on() -> bool {
-    TORCH_IS_ON.load()
 }
 
 pub struct PowerPaths {
@@ -138,12 +130,10 @@ impl PowerPaths {
         if level == 0 {
             self.off();
             self.wakelock.decaffeinate();
-            TORCH_IS_ON.store(false);
         } else if level == 255 {
             #[cfg(feature = "has_fet")]
             self.turbo_level();
             self.wakelock.caffeinate();
-            TORCH_IS_ON.store(true);
         } else {
             self.wakelock.caffeinate();
             let config = crate::power_levels::OUTPUT_LEVELS.load_at(level as usize);
@@ -156,7 +146,6 @@ impl PowerPaths {
             self.dac.dac_set_value(config.dac_level);
             self.set_vref(config.path.reference());
             self.set_path(config.path.path_level());
-            TORCH_IS_ON.store(true);
         }
     }
 }
@@ -165,7 +154,6 @@ const INSTANT_STOP_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_ce
 const MAX_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(50);
 const MIN_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(3.0);
 const INSTANT_STOP_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(2.8);
-
 
 fn delta(desired_level: u8, gradual_level: u8) -> u8 {
     let abs_diff = desired_level.abs_diff(gradual_level);
@@ -178,7 +166,6 @@ fn delta(desired_level: u8, gradual_level: u8) -> u8 {
         abs_diff / 8
     }
 }
-
 
 #[embassy_executor::task]
 pub async fn power_controller(mut paths: PowerPaths) {
@@ -193,7 +180,7 @@ pub async fn power_controller(mut paths: PowerPaths) {
             let gradual_level = GRADUAL_LEVEL.load();
             let desired_level = DESIRED_LEVEL.load();
 
-            let delta = delta(desired_level,  gradual_level);
+            let delta = delta(desired_level, gradual_level);
 
             let desired_level = if desired_level < gradual_level {
                 desired_level + delta
@@ -229,7 +216,8 @@ pub async fn power_controller(mut paths: PowerPaths) {
         }
 
         const TICKS_PER_SEC: u32 = 100;
-        let power_decrease = accumulated_under_volts.saturating_add((accumulated_over_temp) / (64 * TICKS_PER_SEC * 2));
+        let power_decrease = accumulated_under_volts
+            .saturating_add((accumulated_over_temp) / (64 * TICKS_PER_SEC * 2));
 
         // decrease level by 1 for every two seconds of 1c over temp
 

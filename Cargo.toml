@@ -12,10 +12,11 @@ space_saving = ["time_u32"]
 time_u32 = []
 has_fet = []
 
-default_modes = ["mode_fade"]
+default_modes = ["mode_fade", "mode_croak"]
 
 mode_strobe = []
 mode_fade = []
+mode_croak = []
 
 [dependencies]
 avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-section-impl"] }
@@ -50,6 +51,8 @@ cichlid = { git = "https://github.com/simmsb/cichlid", version = "0.2.1", defaul
     "no-std",
 ] }
 fixed = "1.25.1"
+small_morse = "0.1.0"
+pin-project-lite = "0.2.15"
 
 [dependencies.avr-hal-generic]
 git = "https://github.com/rahix/avr-hal.git"
@@ -63,12 +66,16 @@ atxtiny-hal = { path = "vendor/atxtiny-hal" }
 [profile.dev]
 panic = "abort"
 codegen-units = 1
-lto = true
+lto = "fat"
 opt-level = "z"
 
 [profile.release]
-debug = true
 panic = "abort"
 codegen-units = 1
-lto = true
+lto = "fat"
 opt-level = "z"
+
+[build-dependencies]
+proc-macro2 = "1.0.89"
+quote = "1.0.37"
+small_morse = "0.1.0"

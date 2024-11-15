@@ -547,6 +547,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e819f2bc632f285be6d7cd36e25940d45b2391dd6d9b939e79de557f7014248"
 
 [[package]]
+name = "small_morse"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be47da2709ca6c5a95cbaea1275b139930c1b76c372957015732b95f79c4fdfa"
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -608,7 +614,11 @@ dependencies = [
  "fugit",
  "futures-util",
  "paste",
+ "pin-project-lite",
  "portable-atomic",
+ "proc-macro2",
+ "quote",
+ "small_morse",
  "ufmt",
 ]
 

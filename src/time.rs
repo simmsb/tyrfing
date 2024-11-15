@@ -91,19 +91,26 @@ mod timer_queue {
         }
     }
     pub fn set_at(_: CriticalSection, id: NonMaxU8, v: Time) {
-        unsafe { *ATS.get_unchecked_mut(id.0 as usize) = v }
+        unsafe {
+            *(&raw mut ATS)
+                .as_mut()
+                .unwrap()
+                .get_unchecked_mut(id.0 as usize) = v
+        }
     }
 
     pub fn set_alarm(_: CriticalSection, id: NonMaxU8, a: Alarm) {
-        unsafe { *ALARMS.get_unchecked_mut(id.0 as usize) = a }
+        unsafe {
+            *(&raw mut ALARMS)
+                .as_mut()
+                .unwrap()
+                .get_unchecked_mut(id.0 as usize) = a
+        }
     }
 }
 
 mod wake_queue {
-    use core::{
-        cell::Cell,
-        task::Waker,
-    };
+    use core::{cell::Cell, task::Waker};
 
     use avr_device::interrupt::{CriticalSection, Mutex};
 
@@ -144,7 +151,10 @@ mod wake_queue {
                 continue;
             }
 
-            entry.set(Some(Entry { at, waker: waker.clone() }));
+            entry.set(Some(Entry {
+                at,
+                waker: waker.clone(),
+            }));
 
             return;
         }
@@ -179,7 +189,7 @@ mod wake_queue {
 impl Driver for AvrTc0EmbassyTimeDriver {
     #[inline(always)]
     fn now(&self) -> Time {
-        avr_hal_generic::avr_device::interrupt::free(|cs| TICKS_ELAPSED.borrow(cs).get() )
+        avr_hal_generic::avr_device::interrupt::free(|cs| TICKS_ELAPSED.borrow(cs).get())
     }
 
     unsafe fn allocate_alarm(&self) -> Option<AlarmHandle> {

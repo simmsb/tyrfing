@@ -1,7 +1,5 @@
 use atxtiny_hal::vref::ReferenceVoltage;
 
-
-
 #[derive(Clone, Copy, Debug)]
 #[repr(u8)]
 pub enum PathLevel {
@@ -48,8 +46,6 @@ impl Level {
         }
     }
 }
-
-
 
 pub const NUM_LEVELS: usize = 256;
 
@@ -314,8 +310,6 @@ const OUTPUT_LEVELS_C: [Level; NUM_LEVELS - 1] = [
 avr_progmem::progmem! {
     pub static progmem OUTPUT_LEVELS: [Level; NUM_LEVELS - 1] = OUTPUT_LEVELS_C;
 }
-
-
 
 //
 // const fn sort_paths<const N: usize>(mut arr: [(Level, f32); N]) -> [(Level, f32); N] {

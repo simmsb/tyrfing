@@ -12,6 +12,7 @@ use crate::{
 };
 
 static IS_TORCH_UNLOCKED: NonAtomicBool = NonAtomicBool::new(false);
+static IS_TORCH_ON: NonAtomicBool = NonAtomicBool::new(false);
 
 pub fn is_torch_unlocked() -> bool {
     IS_TORCH_UNLOCKED.load()
@@ -27,7 +28,241 @@ fn unlock_torch() {
     crate::time::enter_wake_clock();
 }
 
+pub fn is_torch_on() -> bool {
+    IS_TORCH_ON.load()
+}
+
+fn set_torch_on() {
+    IS_TORCH_ON.store(true);
+}
+
+fn set_torch_off() {
+    IS_TORCH_ON.store(false);
+}
+
 const DEFAULT_LEVEL: u8 = 27;
+
+use core::{future::Future, ops::ControlFlow};
+
+use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, signal::Signal};
+
+enum Handled {
+    Handled,
+    Exit,
+}
+
+struct Handler<F> {
+    inner: F,
+}
+
+impl Handler<()> {
+    fn empty() -> Handler<impl Handle> {
+        Handler {
+            inner: |_| async { ControlFlow::Continue(()) },
+        }
+    }
+}
+
+trait Handle {
+    async fn handle(&mut self, e: ButtonEvent) -> ControlFlow<Handled>;
+}
+
+impl<F, Fut> Handle for F
+where
+    F: FnMut(ButtonEvent) -> Fut,
+    Fut: Future<Output = ControlFlow<Handled>>,
+{
+    async fn handle(&mut self, e: ButtonEvent) -> ControlFlow<Handled> {
+        (self)(e).await
+    }
+}
+
+impl<H0: Handle, H1: Handle> Handle for (H0, H1) {
+    async fn handle(&mut self, e: ButtonEvent) -> ControlFlow<Handled> {
+        self.0.handle(e).await?;
+        self.1.handle(e).await
+    }
+}
+
+impl<H: Handle> Handler<H> {
+    async fn run(&mut self) {
+        loop {
+            let r = self.inner.handle(BUTTON_EVENTS.wait().await).await;
+            if let ControlFlow::Break(Handled::Exit) = r {
+                break;
+            }
+        }
+    }
+
+    fn and<Hother: Handle>(self, other: Hother) -> Handler<(H, Hother)> {
+        Handler {
+            inner: (self.inner, other),
+        }
+    }
+}
+
+struct Given<F> {
+    needs: ButtonEvent,
+    inner: F,
+}
+
+impl<F> Given<F> {
+    fn new(needs: ButtonEvent, callback: F) -> Self {
+        Self {
+            needs,
+            inner: callback,
+        }
+    }
+}
+
+impl<F, Fut> Handle for Given<F>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = ControlFlow<Handled>>,
+{
+    async fn handle(&mut self, e: ButtonEvent) -> ControlFlow<Handled> {
+        if e == self.needs {
+            (self.inner)().await
+        } else {
+            ControlFlow::Continue(())
+        }
+    }
+}
+
+struct StandardAdjustment<Op> {
+    last_hold_release: Instant,
+    inner: Op,
+}
+
+impl<Op> StandardAdjustment<Op>
+where
+    Op: FnMut(i8),
+{
+    fn new(op: Op) -> Self {
+        Self {
+            last_hold_release: Instant::now(),
+            inner: op,
+        }
+    }
+}
+
+impl<Op> Handle for StandardAdjustment<Op>
+where
+    Op: FnMut(i8),
+{
+    async fn handle(&mut self, e: ButtonEvent) -> ControlFlow<Handled> {
+        match e {
+            ButtonEvent::Click1 => ControlFlow::Break(Handled::Exit),
+            ButtonEvent::Hold1 => {
+                let direction = if self.last_hold_release.elapsed() > Duration::from_millis(500) {
+                    1
+                } else {
+                    -1
+                };
+                loop {
+                    if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
+                        .await
+                        .is_err()
+                    {
+                        (self.inner)(direction);
+                    } else {
+                        break;
+                    }
+                }
+                if direction == 1 {
+                    self.last_hold_release = Instant::now();
+                }
+
+                ControlFlow::Break(Handled::Handled)
+            }
+            ButtonEvent::Hold2 => {
+                loop {
+                    if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
+                        .await
+                        .is_err()
+                    {
+                        (self.inner)(-1);
+                    } else {
+                        break;
+                    }
+                }
+
+                ControlFlow::Break(Handled::Handled)
+            }
+
+            _ => ControlFlow::Continue(()),
+        }
+    }
+}
+
+struct StateHandler<const GRADUAL: bool, S> {
+    state: Cell<S>,
+    signal: Signal<ThreadModeRawMutex, ()>,
+}
+
+impl<S> StateHandler<true, S> {
+    fn gradual(state: S) -> Self {
+        StateHandler {
+            state: Cell::new(state),
+            signal: Signal::new(),
+        }
+    }
+}
+
+impl<S> StateHandler<false, S> {
+    fn instant(state: S) -> Self {
+        StateHandler {
+            state: Cell::new(state),
+            signal: Signal::new(),
+        }
+    }
+}
+
+#[allow(unused)]
+impl<const GRADUAL: bool, S: Copy> StateHandler<GRADUAL, S> {
+    fn set(&self, state: S) {
+        self.state.set(state);
+        self.signal.signal(());
+    }
+
+    fn modify(&self, f: impl FnOnce(S) -> S) {
+        self.state.set(f(self.state.get()));
+        self.signal.signal(());
+    }
+
+    fn tick(&self) {
+        self.signal.signal(());
+    }
+
+    fn get(&self) -> S {
+        self.state.get()
+    }
+
+    async fn run(&self, mapper: impl Fn(S) -> u8) {
+        loop {
+            let level = mapper(self.state.get());
+
+            if GRADUAL {
+                crate::power::set_level_gradual(level);
+            } else {
+                crate::power::set_level(level);
+            }
+
+            let _ = self.signal.wait().await;
+        }
+    }
+}
+
+async fn with_torch_on<O>(fut: impl Future<Output = O>) -> O {
+    set_torch_on();
+
+    let r = fut.await;
+
+    crate::power::set_level_gradual(0);
+    set_torch_off();
+
+    r
+}
 
 #[embassy_executor::task]
 pub async fn torch_ui() {
@@ -37,11 +272,7 @@ pub async fn torch_ui() {
         let unlocked = IS_TORCH_UNLOCKED.load();
 
         if unlocked {
-            let evt = crate::with_timeout::with_timeout(
-                Some(Duration::from_secs(60 * 3)),
-                BUTTON_EVENTS.wait(),
-            )
-            .await;
+            let evt = with_timeout(Some(Duration::from_secs(60 * 3)), BUTTON_EVENTS.wait()).await;
             let Ok(evt) = evt else {
                 blink(1).await;
                 lock_torch();
@@ -49,20 +280,25 @@ pub async fn torch_ui() {
             };
             match evt {
                 ButtonEvent::Click1 | ButtonEvent::Hold1 => {
-                    saved_level = on_ramping(if evt == ButtonEvent::Click1 {
-                        saved_level
-                    } else {
-                        DEFAULT_LEVEL
-                    })
-                    .await;
+                    saved_level =
+                        with_torch_on(NoInline::new(on_ramping(if evt == ButtonEvent::Click1 {
+                            saved_level
+                        } else {
+                            DEFAULT_LEVEL
+                        })))
+                        .await;
                 }
                 #[cfg(feature = "mode_fade")]
                 ButtonEvent::Hold2 => {
-                    on_fadeout().await;
+                    with_torch_on(NoInline::new(on_fadeout())).await;
                 }
-                #[cfg(feature = "mode_stobe")]
+                #[cfg(feature = "mode_strobe")]
                 ButtonEvent::Hold3 => {
-                    on_strobe().await;
+                    with_torch_on(NoInline::new(on_strobe())).await;
+                }
+                #[cfg(feature = "mode_croak")]
+                ButtonEvent::Hold4 => {
+                    with_torch_on(NoInline::new(on_croak())).await;
                 }
                 ButtonEvent::Click4 => {
                     blink(1).await;
@@ -74,7 +310,7 @@ pub async fn torch_ui() {
             let evt = select::select(BUTTON_EVENTS.wait(), LOCKOUT_BUTTON_STATES.wait()).await;
             match evt {
                 select::Either::Second(ButtonState::Press) => {
-                    crate::power::set_level(40);
+                    crate::power::set_level(30);
                 }
                 select::Either::Second(ButtonState::Depress) => {
                     crate::power::set_level_gradual(0);
@@ -90,15 +326,17 @@ pub async fn torch_ui() {
     }
 }
 
-#[cfg(feature = "mode_stobe")]
+#[cfg(feature = "mode_strobe")]
 async fn on_strobe() {
+    use core::cell::Cell;
+
     let level = Cell::new(DEFAULT_LEVEL);
     let period = Cell::new(Duration::from_hz(10));
 
     let strobe = async {
         let mut on = true;
         loop {
-            embassy_time::Timer::after(period.get()).await;
+            maitake::time::sleep(period.get().into()).await;
             crate::power::set_level(if on { level.get() } else { 1 });
             crate::power::poke_power_controller();
             on = !on;
@@ -109,17 +347,17 @@ async fn on_strobe() {
         let mut last_hold_release = Instant::now();
         loop {
             match BUTTON_EVENTS.wait().await {
-                crate::events::ButtonEvent::Click1 => {
+                ButtonEvent::Click1 => {
                     return;
                 }
-                crate::events::ButtonEvent::Hold1 => {
+                ButtonEvent::Hold1 => {
                     let direction = if last_hold_release.elapsed() > Duration::from_millis(500) {
                         1
                     } else {
                         -1
                     };
                     loop {
-                        if with_timeout(Some(Duration::from_millis(200)), BUTTON_EVENTS.wait())
+                        if timeout(Some(Duration::from_millis(200)), BUTTON_EVENTS.wait())
                             .await
                             .is_err()
                         {
@@ -132,8 +370,8 @@ async fn on_strobe() {
                         last_hold_release = Instant::now();
                     }
                 }
-                crate::events::ButtonEvent::Hold2 => loop {
-                    if with_timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
+                ButtonEvent::Hold2 => loop {
+                    if timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
@@ -142,8 +380,8 @@ async fn on_strobe() {
                         break;
                     }
                 },
-                crate::events::ButtonEvent::Hold3 => loop {
-                    if with_timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
+                ButtonEvent::Hold3 => loop {
+                    if timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
@@ -154,8 +392,8 @@ async fn on_strobe() {
                         break;
                     }
                 },
-                crate::events::ButtonEvent::Hold4 => loop {
-                    if with_timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
+                ButtonEvent::Hold4 => loop {
+                    if timeout(Some(Duration::from_millis(100)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
@@ -176,149 +414,207 @@ async fn on_strobe() {
     crate::power::set_level_gradual(0);
 }
 
+pin_project_lite::pin_project! {
+    struct NoInline<F> {
+        #[pin]
+        inner: F,
+    }
+}
+
+impl<F> NoInline<F> {
+    fn new(inner: F) -> Self {
+        Self { inner }
+    }
+}
+impl<F: Future> Future for NoInline<F> {
+    type Output = F::Output;
+
+    #[inline(never)]
+    fn poll(
+        self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        self.project().inner.poll(cx)
+    }
+}
+
 #[cfg(feature = "mode_fade")]
 async fn on_fadeout() {
-    let level = Cell::new(DEFAULT_LEVEL);
-    let expiry = Cell::new(Instant::now() + Duration::from_secs(60 * 4));
+    use embassy_time::Timer;
+
+    #[derive(Copy, Clone)]
+    struct State {
+        level: u8,
+        expiry: Instant,
+    }
+
+    let state = StateHandler::gradual(State {
+        level: DEFAULT_LEVEL,
+        expiry: Instant::now() + Duration::from_secs(60 * 4),
+    });
 
     let fade = async {
         loop {
-            embassy_time::Timer::after_millis(100).await;
+            Timer::after_millis(100).await;
 
-            let Some(time_left) = expiry.get().checked_duration_since(Instant::now()) else {
+            if state
+                .get()
+                .expiry
+                .checked_duration_since(Instant::now())
+                .is_none()
+            {
                 break;
             };
 
-            let brightness = if time_left > Duration::from_secs(60 * 4) {
-                level.get()
-            } else {
-                let remaining = fixed::types::U32F0::from_num(time_left.as_ticks())
-                    .inv_lerp::<fixed::types::extra::U32>(
-                        0u32.into(),
-                        Duration::from_secs(60 * 4).as_ticks().into(),
-                    )
-                    .lerp(0u32.into(), 255u32.into())
-                    .saturating_to_num::<u8>();
-                cichlid::math::scale_u8(level.get(), remaining)
-            };
-
-            crate::power::set_level_gradual(brightness)
+            state.tick();
         }
     };
 
     let control = async {
-        let mut last_hold_release = Instant::now();
-        loop {
-            match BUTTON_EVENTS.wait().await {
-                crate::events::ButtonEvent::Click1 => {
-                    return;
-                }
-                crate::events::ButtonEvent::Hold1 => {
-                    let direction = if last_hold_release.elapsed() > Duration::from_millis(500) {
-                        1
-                    } else {
-                        -1
-                    };
-                    loop {
-                        if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
-                            .await
-                            .is_err()
-                        {
-                            level.set(level.get().saturating_add_signed(direction));
-                        } else {
-                            break;
-                        }
-                    }
-                    if direction == 1 {
-                        last_hold_release = Instant::now();
-                    }
-                }
-                crate::events::ButtonEvent::Hold2 => loop {
-                    if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
-                        .await
-                        .is_err()
-                    {
-                        level.set(level.get().saturating_sub(1));
-                    } else {
-                        break;
-                    }
-                },
-                crate::events::ButtonEvent::Hold3 => loop {
+        Handler::empty()
+            .and(StandardAdjustment::new(|d| {
+                state.modify(|State { level, expiry }| State {
+                    level: level.saturating_add_signed(d),
+                    expiry,
+                })
+            }))
+            .and(Given::new(ButtonEvent::Hold3, || async {
+                loop {
                     if with_timeout(Some(Duration::from_millis(500)), BUTTON_EVENTS.wait())
                         .await
                         .is_err()
                     {
                         blink(1).await;
-                        expiry.set(expiry.get() + Duration::from_secs(60));
+                        state.modify(|State { level, expiry }| State {
+                            level,
+                            expiry: expiry + Duration::from_secs(60),
+                        })
                     } else {
                         break;
                     }
-                },
-                _ => {}
+                }
+
+                ControlFlow::Break(Handled::Handled)
+            }))
+            .run()
+            .await;
+    };
+
+    let level_fut = state.run(|State { level, expiry }| {
+        let Some(time_left) = expiry.checked_duration_since(Instant::now()) else {
+            return 0;
+        };
+
+        if time_left > Duration::from_secs(60 * 4) {
+            level
+        } else {
+            ((time_left.as_millis() as u32 * level as u32)
+                / Duration::from_secs(60 * 4).as_millis() as u32) as u8
+        }
+    });
+
+    embassy_futures::select::select3(fade, control, level_fut).await;
+}
+
+#[cfg(feature = "mode_croak")]
+async fn on_croak() {
+    mod croak {
+        include!(concat!(env!("OUT_DIR"), "/croak.rs"));
+    }
+    use embassy_time::Timer;
+
+    #[derive(Copy, Clone)]
+    struct State {
+        level: u8,
+        on: bool,
+    }
+
+    let state = StateHandler::instant(State {
+        level: DEFAULT_LEVEL,
+        on: false,
+    });
+
+    let croaker = async {
+        loop {
+            for x in croak::CROAK.iter() {
+                state.modify(|State { level, .. }| State { level, on: x.on });
+
+                Timer::after_millis(x.duration as u32 * 300).await;
             }
         }
     };
 
-    embassy_futures::select::select(fade, control).await;
+    let control = async {
+        Handler::empty()
+            .and(StandardAdjustment::new(|d| {
+                state.modify(|State { level, on }| State {
+                    level: level.saturating_add_signed(d),
+                    on,
+                })
+            }))
+            .run()
+            .await;
+    };
 
-    crate::power::set_level_gradual(0);
+    let level_fut = state.run(|State { level, on }| if on { level } else { 1 });
+
+    embassy_futures::select::select3(croaker, control, level_fut).await;
 }
 
 async fn on_ramping(level: u8) -> u8 {
-    let mut level_before_boost = level;
-    let mut level = level;
-
-    let mut last_hold_release = Instant::now();
-
-    loop {
-        crate::power::set_level_gradual(level);
-
-        match BUTTON_EVENTS.wait().await {
-            crate::events::ButtonEvent::Click1 => {
-                crate::power::set_level_gradual(0);
-                return level;
-            }
-            crate::events::ButtonEvent::Click2 => {
-                if level == 255 {
-                    level = level_before_boost;
-                } else {
-                    level_before_boost = level;
-                    level = 255;
-                }
-            }
-            crate::events::ButtonEvent::Hold1 => {
-                let direction = if last_hold_release.elapsed() > Duration::from_millis(500) {
-                    1
-                } else {
-                    -1
-                };
-                loop {
-                    if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
-                        .await
-                        .is_err()
-                    {
-                        level = level.saturating_add_signed(direction);
-                        crate::power::set_level_gradual(level);
-                    } else {
-                        break;
-                    }
-                }
-                if direction == 1 {
-                    last_hold_release = Instant::now();
-                }
-            }
-            crate::events::ButtonEvent::Hold2 => loop {
-                if with_timeout(Some(Duration::from_millis(16)), BUTTON_EVENTS.wait())
-                    .await
-                    .is_err()
-                {
-                    level = level.saturating_sub(1);
-                    crate::power::set_level_gradual(level);
-                } else {
-                    break;
-                }
-            },
-            _ => {}
-        }
+    #[derive(Copy, Clone)]
+    struct State {
+        level: u8,
+        level_before_boost: u8,
     }
+
+    let state = StateHandler::gradual(State {
+        level,
+        level_before_boost: level,
+    });
+
+    let control = async {
+        Handler::empty()
+            .and(StandardAdjustment::new(|d| {
+                state.modify(
+                    |State {
+                         level,
+                         level_before_boost,
+                     }| State {
+                        level: level.saturating_add_signed(d),
+                        level_before_boost,
+                    },
+                )
+            }))
+            .and(Given::new(ButtonEvent::Click2, || async {
+                state.modify(
+                    |State {
+                         level,
+                         level_before_boost,
+                     }| {
+                        if level == 255 {
+                            State {
+                                level: level_before_boost,
+                                level_before_boost,
+                            }
+                        } else {
+                            State {
+                                level: 255,
+                                level_before_boost: level,
+                            }
+                        }
+                    },
+                );
+
+                ControlFlow::Break(Handled::Handled)
+            }))
+            .run()
+            .await;
+    };
+
+    let level_fut = state.run(|State { level, .. }| level);
+
+    embassy_futures::select::select(NoInline::new(control), NoInline::new(level_fut)).await;
+
+    state.get().level
 }

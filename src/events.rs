@@ -8,7 +8,7 @@ use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
 
 use embassy_time::Duration;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum ButtonEvent {
     Click1,
     Click2,
