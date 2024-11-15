@@ -77,7 +77,7 @@ pub async fn torch_ui() {
                     crate::power::set_level(40);
                 }
                 select::Either::Second(ButtonState::Depress) => {
-                    crate::power::set_level(0);
+                    crate::power::set_level_gradual(0);
                 }
                 select::Either::First(ButtonEvent::Click3) => {
                     blink(1).await;

@@ -5,9 +5,7 @@
 #![feature(impl_trait_in_assoc_type)]
 #![feature(abi_avr_interrupt)]
 #![feature(rustc_attrs)]
-#![feature(inline_const)]
 #![feature(generic_arg_infer)]
-#![feature(const_fn_floating_point_arithmetic)]
 // #![feature(
 //     const_option,
 //     const_mut_refs,

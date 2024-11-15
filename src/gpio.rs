@@ -1,11 +1,7 @@
 use core::task::Poll;
 
-use atxtiny_hal::{
-    embedded_hal::digital::InputPin,
-    gpio::{Edge, GpioRegExt, Input},
-};
+use atxtiny_hal::gpio::{Edge, GpioRegExt, Input};
 use avr_device::attiny1616::{PORTA, PORTB, PORTC};
-use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
 use embassy_sync::waitqueue::AtomicWaker;
 use futures_util::Future;
 

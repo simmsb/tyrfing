@@ -166,6 +166,20 @@ const MAX_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(50)
 const MIN_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(3.0);
 const INSTANT_STOP_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(2.8);
 
+
+fn delta(desired_level: u8, gradual_level: u8) -> u8 {
+    let abs_diff = desired_level.abs_diff(gradual_level);
+
+    if abs_diff < 10 {
+        1
+    } else if abs_diff < 30 {
+        3
+    } else {
+        abs_diff / 8
+    }
+}
+
+
 #[embassy_executor::task]
 pub async fn power_controller(mut paths: PowerPaths) {
     let mut previous_level = 0u8;
@@ -179,11 +193,7 @@ pub async fn power_controller(mut paths: PowerPaths) {
             let gradual_level = GRADUAL_LEVEL.load();
             let desired_level = DESIRED_LEVEL.load();
 
-            let delta = if desired_level.abs_diff(gradual_level) > 50 {
-                3
-            } else {
-                1
-            };
+            let delta = delta(desired_level,  gradual_level);
 
             let desired_level = if desired_level < gradual_level {
                 desired_level + delta
