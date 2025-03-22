@@ -29,6 +29,11 @@ macro_rules! non_atomic_impl {
                 pub fn store(&self, value: $type) {
                     unsafe { self.0.get().write(value) }
                 }
+
+                #[inline(always)]
+                pub fn replace(&self, value: $type) -> $type {
+                    unsafe { self.0.get().replace(value) }
+                }
             }
         }
     };

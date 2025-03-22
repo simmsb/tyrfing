@@ -33,14 +33,16 @@
           
           avr-toolchain-plain = fenix.packages.${system}.fromToolchainFile {
             file = ./rust-toolchain.toml;
-            sha256 = "sha256-RsORFQhrtQVybYaWATQWNpUld1l0NxcUds2jd/YWPlA=";
+            sha256 = "sha256-xkgqbv2/b5sQHWHq4eYPI/n3qgL5iyl37BqOEf0Fda8=";
           };
           native-toolchain = (fenix.packages.${system}.complete.withComponents [
             "cargo"
             "clippy"
             # "rust-src"
             # "rustc"
-            # "rustfmt"
+            "rustfmt"
+            "llvm-tools-preview"
+            "rust-analyzer"
           ]);
           avr-toolchain = pkgs.runCommand "turbowaker-rust" { } ''
             echo "test $out ${avr-toolchain-plain}"

@@ -9,6 +9,7 @@ class RefVoltage(Enum):
     v1_1 = "ReferenceVoltage::_1V10"
     v1_5 = "ReferenceVoltage::_1V50"
     v2_5 = "ReferenceVoltage::_2V50"
+    v4_3 = "ReferenceVoltage::_4V34"
 
     def voltage(self):
         match self:
@@ -20,6 +21,9 @@ class RefVoltage(Enum):
                 return 1.5
             case RefVoltage.v2_5:
                 return 2.5
+            case RefVoltage.v4_3:
+                # This vref is constrained by VDD being 3.3v
+                return 3.3
 
 class PathLevel(Enum):
     one = "PathLevel::One"
@@ -50,10 +54,10 @@ def closest_level(levels: List[Level], desired: float) -> Level:
 
 def calc_levels() -> List[Level]:
     levels = [Level(ref, path_level, adc_level) for ref, path_level, adc_level in itertools.product(
-        RefVoltage,
+        [RefVoltage.v0_5, RefVoltage.v1_1, RefVoltage.v1_5, RefVoltage.v2_5],
         PathLevel,
         range(256)
-    )]
+        )] + [Level(RefVoltage.v4_3, PathLevel.three, 255)]
 
     highest_output = max(levels, key=lambda l: l.calc_output()).calc_output()
 

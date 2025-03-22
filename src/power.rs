@@ -1,4 +1,4 @@
-use crate::{nonatomic::NonAtomicU8, power_levels::PathLevel};
+use crate::{nonatomic::{NonAtomicBool, NonAtomicU8}, power_levels::PathLevel};
 use atxtiny_hal::{
     dac::{Dac, Enabled},
     embedded_hal::digital::OutputPin,
@@ -15,6 +15,7 @@ use crate::{
 
 static DESIRED_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
 static GRADUAL_LEVEL: NonAtomicU8 = NonAtomicU8::new(0);
+static TURBOED: NonAtomicBool = NonAtomicBool::new(false);
 
 static POKE_POWER_CONTROLLER: embassy_sync::signal::Signal<
     embassy_sync::blocking_mutex::raw::ThreadModeRawMutex,
@@ -153,7 +154,7 @@ impl PowerPaths {
 const INSTANT_STOP_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(60);
 const MAX_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(50);
 const MIN_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(3.0);
-const INSTANT_STOP_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(2.8);
+const INSTANT_STOP_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(2.6);
 
 fn delta(desired_level: u8, gradual_level: u8) -> u8 {
     let abs_diff = desired_level.abs_diff(gradual_level);
@@ -207,6 +208,11 @@ pub async fn power_controller(mut paths: PowerPaths) {
         }
 
         if tick_this_time {
+            if TURBOED.replace(false) {
+                accumulated_over_temp = 0;
+                accumulated_under_volts = 0;
+            }
+
             let temp_diff = (temp as i32) - (MAX_TEMP.0 as i32);
 
             accumulated_over_temp = accumulated_over_temp.saturating_add_signed(temp_diff);
