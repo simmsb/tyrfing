@@ -1,4 +1,7 @@
-use crate::{nonatomic::{NonAtomicBool, NonAtomicU8}, power_levels::PathLevel};
+use crate::{
+    nonatomic::{NonAtomicBool, NonAtomicU8},
+    power_levels::PathLevel,
+};
 use atxtiny_hal::{
     dac::{Dac, Enabled},
     embedded_hal::digital::OutputPin,
