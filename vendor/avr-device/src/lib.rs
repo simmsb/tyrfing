@@ -25,6 +25,7 @@
 #![cfg_attr(feature = "attiny167", doc = "**attiny167**,")]
 #![cfg_attr(feature = "attiny1614", doc = "**attiny1614**,")]
 #![cfg_attr(feature = "attiny1616", doc = "**attiny1616**,")]
+#![cfg_attr(feature = "avr32dd20", doc = "**avr32dd20*,")]
 #![cfg_attr(feature = "attiny202", doc = "**attiny202**,")]
 #![cfg_attr(feature = "attiny2313", doc = "**attiny2313**,")]
 #![cfg_attr(feature = "attiny2313a", doc = "**attiny2313a**,")]
@@ -71,6 +72,7 @@
 //! `attiny167`,
 //! `attiny1614`,
 //! `attiny1616`,
+//! `avr32dd20`,
 //! `attiny202`,
 //! `attiny2313`,
 //! `attiny2313a`,
@@ -231,6 +233,7 @@ compile_error!(
     * attiny167
     * attiny1614
     * attiny1616
+    * avr32dd20
     * attiny202
     * attiny2313
     * attiny2313a
@@ -296,6 +299,8 @@ pub use crate::devices::attiny13a;
 pub use crate::devices::attiny1614;
 #[cfg(feature = "attiny1616")]
 pub use crate::devices::attiny1616;
+#[cfg(feature = "avr32dd20")]
+pub use crate::devices::avr32dd20;
 #[cfg(feature = "attiny167")]
 pub use crate::devices::attiny167;
 #[cfg(feature = "attiny202")]
@@ -332,3 +337,5 @@ pub mod ccp;
 
 #[cfg(feature = "attiny1616")]
 pub use crate::ccp::attiny1616 as attiny1616_ccp;
+#[cfg(feature = "avr32dd20")]
+pub use crate::ccp::avr32dd20 as avr32dd20_ccp;

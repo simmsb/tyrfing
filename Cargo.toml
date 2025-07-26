@@ -19,7 +19,7 @@ mode_fade = []
 mode_croak = []
 
 [dependencies]
-avr-device = { version = "0.5.3", features = ["rt", "attiny1616", "critical-section-impl"] }
+avr-device = { version = "0.5.3", features = ["rt", "avr32dd20", "critical-section-impl"] }
 
 embassy-executor = { features = ["nightly", "arch-avr", "executor-thread", "turbowakers" ], git = "https://github.com/simmsb/embassy", branch = "32bit" }
 embassy-time = { git = "https://github.com/simmsb/embassy", branch = "32bit" }

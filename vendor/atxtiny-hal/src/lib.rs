@@ -27,6 +27,8 @@ pub use avr_device;
 pub use avr_device::attiny817 as pac;
 #[cfg(feature = "attiny1616")]
 pub use avr_device::attiny1616 as pac;
+#[cfg(feature = "avr32dd20")]
+pub use avr_device::avr32dd20 as pac;
 
 pub mod clkctrl;
 pub mod gpio;

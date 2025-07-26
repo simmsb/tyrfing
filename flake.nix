@@ -33,7 +33,7 @@
           
           avr-toolchain-plain = fenix.packages.${system}.fromToolchainFile {
             file = ./rust-toolchain.toml;
-            sha256 = "sha256-xkgqbv2/b5sQHWHq4eYPI/n3qgL5iyl37BqOEf0Fda8=";
+            sha256 = "sha256-RrnlLZsdcZHug4JEdoeMS03xzMMQcfoLzQHIoun8xvM=";
           };
           native-toolchain = (fenix.packages.${system}.complete.withComponents [
             "cargo"
@@ -59,51 +59,6 @@
             toolchain = fenix.packages.${system}.combine [ avr-toolchain native-toolchain ];
             craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
 
-            src = craneLib.cleanCargoSource ./.;
-
-            package = { target ? "thumbv7em-none-eabihf", args ? "", profile ? "release", defmt ? "off" }: craneLib.buildPackage {
-              inherit src;
-
-              cargoVendorDir = craneLib.vendorMultipleCargoDeps {
-                inherit (craneLib.findCargoFiles src) cargoConfigs;
-                cargoLockList = [
-                  ./Cargo.lock
-
-                  # Unfortunately this approach requires IFD (import-from-derivation)
-                  # otherwise Nix will refuse to read the Cargo.lock from our toolchain
-                  # (unless we build with `--impure`).
-                  #
-                  # Another way around this is to manually copy the rustlib `Cargo.lock`
-                  # to the repo and import it with `./path/to/rustlib/Cargo.lock` which
-                  # will avoid IFD entirely but will require manually keeping the file
-                  # up to date!
-                  "${toolchain}/lib/rustlib/src/rust/library/Cargo.lock"
-                ];
-              };
-
-              cargoExtraArgs = "-Z build-std=core,panic_abort,alloc -Z build-std-features=optimize_for_size,panic_immediate_abort,core/turbowakers --target ${target} ${args}";
-              CARGO_PROFILE = profile;
-              DEFMT_LOG = defmt;
-              pname = "rusty-glove";
-              version = "0.1.0";
-
-              strictDeps = true;
-              doCheck = false;
-              buildInputs = [
-                # Add additional build inputs here
-              ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-                # Additional darwin specific inputs can be set here
-                pkgs.libiconv
-              ];
-            };
-            elf = pkg: name: binname: pkgs.runCommandLocal "mkelf" { } ''
-              mkdir -p $out
-              cp ${pkg}/bin/${name} $out/${binname}.elf
-            '';
-            binary = pkg: name: pkgs.runCommandLocal "mkbinary" { buildInputs = [ pkgs.llvm ]; } ''
-              mkdir -p $out
-              llvm-objcopy -O binary ${pkg}/bin/${name} $out/${name}.bin
-            '';
           avrlibc = pkgs.pkgsCross.avr.libcCross;
           dfp = pkgs.fetchzip {
             url = "http://packs.download.atmel.com/Atmel.ATtiny_DFP.2.0.368.atpack";

@@ -39,3 +39,40 @@ pub mod attiny1616 {
     // Configuration change protected registers in TCD0
     impl Protected for crate::attiny1616::tcd0::faultctrl::FAULTCTRL_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::attiny1616::cpu::ccp::CCP_SPEC; }
 }
+
+
+#[cfg(feature = "avr32dd20")]
+pub mod avr32dd20 {
+    use crate::generic::{UnlockRegister, Protected};
+
+    // Mark the CPU.CCP register with the UnlockRegister trait so that it can be used to unlock the below defined registers
+    impl UnlockRegister for crate::avr32dd20::cpu::ccp::CCP_SPEC { const PTR: *mut u8 = 0x34 as *mut u8; }
+
+    // Configuration change protected registers in NVMCTRL
+    impl Protected for crate::avr32dd20::nvmctrl::ctrla::CTRLA_SPEC { const MAGIC: u8 = 0x9D; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::nvmctrl::ctrlb::CTRLB_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+
+    // Configuration change protected registers in CLKCTRL
+    impl Protected for crate::avr32dd20::clkctrl::mclkctrlb::MCLKCTRLB_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::clkctrl::oschfctrla::OSCHFCTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::clkctrl::oschftune::OSCHFTUNE_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::clkctrl::xosc32kctrla::XOSC32KCTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::clkctrl::mclkctrla::MCLKCTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::clkctrl::osc32kctrla::OSC32KCTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+
+    // Configuration change protected registers in RSTCTRL
+    impl Protected for crate::avr32dd20::rstctrl::swrr::SWRR_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+
+    // Configuration change protected registers in CPUINT
+    impl Protected for crate::avr32dd20::cpuint::ctrla::CTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+
+    // Configuration change protected registers in BOD
+    impl Protected for crate::avr32dd20::bod::ctrla::CTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+
+    // Configuration change protected registers in WDT
+    impl Protected for crate::avr32dd20::wdt::ctrla::CTRLA_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+    impl Protected for crate::avr32dd20::wdt::status::STATUS_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+
+    // Configuration change protected registers in TCD0
+    impl Protected for crate::avr32dd20::tcd0::faultctrl::FAULTCTRL_SPEC { const MAGIC: u8 = 0xD8; type CcpReg = crate::avr32dd20::cpu::ccp::CCP_SPEC; }
+}

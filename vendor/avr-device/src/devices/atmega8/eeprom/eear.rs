@@ -1,0 +1,38 @@
+#[doc = "Register `EEAR` reader"]
+pub type R = crate::R<EEAR_SPEC>;
+#[doc = "Register `EEAR` writer"]
+pub type W = crate::W<EEAR_SPEC>;
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(f, "{}", self.bits())
+    }
+}
+impl core::fmt::Debug for crate::generic::Reg<EEAR_SPEC> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Debug::fmt(&self.read(), f)
+    }
+}
+impl W {
+    #[doc = "Writes raw bits to the register."]
+    #[inline(always)]
+    pub fn bits(&mut self, bits: u16) -> &mut Self {
+        self.bits = bits;
+        self
+    }
+}
+#[doc = "EEPROM Address Register Bytes\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`eear::R`](R).  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`eear::W`](W). You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+pub struct EEAR_SPEC;
+impl crate::RegisterSpec for EEAR_SPEC {
+    type Ux = u16;
+}
+#[doc = "`read()` method returns [`eear::R`](R) reader structure"]
+impl crate::Readable for EEAR_SPEC {}
+#[doc = "`write(|w| ..)` method takes [`eear::W`](W) writer structure"]
+impl crate::Writable for EEAR_SPEC {
+    const ZERO_TO_MODIFY_FIELDS_BITMAP: Self::Ux = 0;
+    const ONE_TO_MODIFY_FIELDS_BITMAP: Self::Ux = 0;
+}
+#[doc = "`reset()` method sets EEAR to value 0"]
+impl crate::Resettable for EEAR_SPEC {
+    const RESET_VALUE: Self::Ux = 0;
+}

@@ -34,7 +34,7 @@ index 8fc942d..92fcfce 100644
 +    use crate::ptr::NonNull;
 +
 +    use super::*;
-+    extern "Rust" {
++    unsafe extern "Rust" {
 +        fn _turbo_wake(ptr: NonNull<()>);
 +    }
 +

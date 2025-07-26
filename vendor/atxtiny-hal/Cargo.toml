@@ -26,7 +26,7 @@ void = { default-features = false, version = "1.0" }
 enumset = { version = "1.1", optional = true}
 
 [features]
-default = ["attiny1616", "rt", "enumset", "ms5611", "fullpanic"]
+default = ["avr32dd20", "rt", "enumset", "ms5611", "fullpanic"]
 device-selected = []
 rt = ["avr-device/rt"]
 fullpanic = []
@@ -34,6 +34,7 @@ fullpanic = []
 # devices
 #attiny817 = ["avr-device/attiny817", "device-selected"]
 attiny1616 = ["avr-device/attiny1616", "device-selected"]
+avr32dd20 = ["avr-device/avr32dd20", "device-selected"]
 
 # features for bins
 ms5611 = []

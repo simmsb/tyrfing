@@ -1,7 +1,7 @@
 # Before upgrading check that everything is available on all tier1 targets here:
 # https://rust-lang.github.io/rustup-components-history
 [toolchain]
-channel = "nightly-2025-1-11"
+channel = "nightly-2025-07-25"
 components = [ "rust-src", "llvm-tools", "rust-analyzer" ]
 profile = "minimal"
-target = "avr-specs/avr-attiny1616.json"
+target = "avr-none"

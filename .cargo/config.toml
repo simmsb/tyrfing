@@ -1,5 +1,7 @@
 [build]
-target = "avr-specs/avr-attiny1616.json"
+#target = "avr-specs/avr-attiny1616.json"
+target = "avr-none"
+rustflags = ["-C", "target-cpu=avrxmega3"]
 
 [target.'cfg(target_arch = "avr")']
 runner = "ravedude uno -cb 57600"

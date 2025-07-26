@@ -1,0 +1,139 @@
+#[doc = "Register `PORTC` reader"]
+pub type R = crate::R<PORTC_SPEC>;
+#[doc = "Register `PORTC` writer"]
+pub type W = crate::W<PORTC_SPEC>;
+#[doc = "Field `PC0` reader - Pin C0"]
+pub type PC0_R = crate::BitReader;
+#[doc = "Field `PC0` writer - Pin C0"]
+pub type PC0_W<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `PC1` reader - Pin C1"]
+pub type PC1_R = crate::BitReader;
+#[doc = "Field `PC1` writer - Pin C1"]
+pub type PC1_W<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `PC2` reader - Pin C2"]
+pub type PC2_R = crate::BitReader;
+#[doc = "Field `PC2` writer - Pin C2"]
+pub type PC2_W<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `PC3` reader - Pin C3"]
+pub type PC3_R = crate::BitReader;
+#[doc = "Field `PC3` writer - Pin C3"]
+pub type PC3_W<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `PC4` reader - Pin C4"]
+pub type PC4_R = crate::BitReader;
+#[doc = "Field `PC4` writer - Pin C4"]
+pub type PC4_W<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `PC5` reader - Pin C5"]
+pub type PC5_R = crate::BitReader;
+#[doc = "Field `PC5` writer - Pin C5"]
+pub type PC5_W<'a, REG> = crate::BitWriter<'a, REG>;
+#[doc = "Field `PC6` reader - Pin C6"]
+pub type PC6_R = crate::BitReader;
+#[doc = "Field `PC6` writer - Pin C6"]
+pub type PC6_W<'a, REG> = crate::BitWriter<'a, REG>;
+impl R {
+    #[doc = "Bit 0 - Pin C0"]
+    #[inline(always)]
+    pub fn pc0(&self) -> PC0_R {
+        PC0_R::new((self.bits & 1) != 0)
+    }
+    #[doc = "Bit 1 - Pin C1"]
+    #[inline(always)]
+    pub fn pc1(&self) -> PC1_R {
+        PC1_R::new(((self.bits >> 1) & 1) != 0)
+    }
+    #[doc = "Bit 2 - Pin C2"]
+    #[inline(always)]
+    pub fn pc2(&self) -> PC2_R {
+        PC2_R::new(((self.bits >> 2) & 1) != 0)
+    }
+    #[doc = "Bit 3 - Pin C3"]
+    #[inline(always)]
+    pub fn pc3(&self) -> PC3_R {
+        PC3_R::new(((self.bits >> 3) & 1) != 0)
+    }
+    #[doc = "Bit 4 - Pin C4"]
+    #[inline(always)]
+    pub fn pc4(&self) -> PC4_R {
+        PC4_R::new(((self.bits >> 4) & 1) != 0)
+    }
+    #[doc = "Bit 5 - Pin C5"]
+    #[inline(always)]
+    pub fn pc5(&self) -> PC5_R {
+        PC5_R::new(((self.bits >> 5) & 1) != 0)
+    }
+    #[doc = "Bit 6 - Pin C6"]
+    #[inline(always)]
+    pub fn pc6(&self) -> PC6_R {
+        PC6_R::new(((self.bits >> 6) & 1) != 0)
+    }
+}
+impl W {
+    #[doc = "Bit 0 - Pin C0"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc0(&mut self) -> PC0_W<PORTC_SPEC> {
+        PC0_W::new(self, 0)
+    }
+    #[doc = "Bit 1 - Pin C1"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc1(&mut self) -> PC1_W<PORTC_SPEC> {
+        PC1_W::new(self, 1)
+    }
+    #[doc = "Bit 2 - Pin C2"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc2(&mut self) -> PC2_W<PORTC_SPEC> {
+        PC2_W::new(self, 2)
+    }
+    #[doc = "Bit 3 - Pin C3"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc3(&mut self) -> PC3_W<PORTC_SPEC> {
+        PC3_W::new(self, 3)
+    }
+    #[doc = "Bit 4 - Pin C4"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc4(&mut self) -> PC4_W<PORTC_SPEC> {
+        PC4_W::new(self, 4)
+    }
+    #[doc = "Bit 5 - Pin C5"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc5(&mut self) -> PC5_W<PORTC_SPEC> {
+        PC5_W::new(self, 5)
+    }
+    #[doc = "Bit 6 - Pin C6"]
+    #[inline(always)]
+    #[must_use]
+    pub fn pc6(&mut self) -> PC6_W<PORTC_SPEC> {
+        PC6_W::new(self, 6)
+    }
+    #[doc = r" Writes raw bits to the register."]
+    #[doc = r""]
+    #[doc = r" # Safety"]
+    #[doc = r""]
+    #[doc = r" Passing incorrect value can cause undefined behaviour. See reference manual"]
+    #[inline(always)]
+    pub unsafe fn bits(&mut self, bits: u8) -> &mut Self {
+        self.bits = bits;
+        self
+    }
+}
+#[doc = "Port C Data Register\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`portc::R`](R).  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`portc::W`](W). You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api)."]
+pub struct PORTC_SPEC;
+impl crate::RegisterSpec for PORTC_SPEC {
+    type Ux = u8;
+}
+#[doc = "`read()` method returns [`portc::R`](R) reader structure"]
+impl crate::Readable for PORTC_SPEC {}
+#[doc = "`write(|w| ..)` method takes [`portc::W`](W) writer structure"]
+impl crate::Writable for PORTC_SPEC {
+    const ZERO_TO_MODIFY_FIELDS_BITMAP: Self::Ux = 0;
+    const ONE_TO_MODIFY_FIELDS_BITMAP: Self::Ux = 0;
+}
+#[doc = "`reset()` method sets PORTC to value 0"]
+impl crate::Resettable for PORTC_SPEC {
+    const RESET_VALUE: Self::Ux = 0;
+}
