@@ -1,7 +1,6 @@
 #![no_std]
-#![feature(asm_const)]
+#![allow(unexpected_cfgs)]
 #![feature(asm_experimental_arch)]
-#![feature(panic_info_message)]
 #![feature(associated_type_defaults)]
 #![feature(associated_const_equality)]
 
@@ -19,7 +18,6 @@ mod private {
 
 pub mod time;
 pub mod prelude;
-pub mod panic_serial;
 
 pub use avr_device;
 
@@ -33,23 +31,16 @@ pub use avr_device::avr32dd20 as pac;
 pub mod clkctrl;
 pub mod gpio;
 pub mod portmux;
-pub mod serial;
-pub mod twi;
-pub mod spi;
 pub mod watchdog;
 pub mod nvmctrl;
-pub mod ccl;
 pub mod slpctrl;
 pub mod rstctrl;
 pub mod bod;
 pub mod vref;
 pub mod dac;
-pub mod ac;
 pub mod timer;
 pub mod cpuint;
 pub mod syscfg;
-pub mod evsys;
-pub mod evout;
 
 /// Toggle something on or off.
 ///

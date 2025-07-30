@@ -17,14 +17,7 @@ pub struct RegisterBlock {
     pinctrlset: PINCTRLSET,
     pinctrlclr: PINCTRLCLR,
     _reserved15: [u8; 0x01],
-    pin0ctrl: PIN0CTRL,
-    pin1ctrl: PIN1CTRL,
-    pin2ctrl: PIN2CTRL,
-    pin3ctrl: PIN3CTRL,
-    pin4ctrl: PIN4CTRL,
-    pin5ctrl: PIN5CTRL,
-    pin6ctrl: PIN6CTRL,
-    pin7ctrl: PIN7CTRL,
+    pinctrl: [PINCTRL; 8],
 }
 impl RegisterBlock {
     #[doc = "0x00 - Data Direction"]
@@ -102,45 +95,56 @@ impl RegisterBlock {
     pub const fn pinctrlclr(&self) -> &PINCTRLCLR {
         &self.pinctrlclr
     }
+    #[doc = "0x10..0x18 - Pin %s Control"]
+    #[inline(always)]
+    pub const fn pinctrl(&self, n: usize) -> &PINCTRL {
+        &self.pinctrl[n]
+    }
+    #[doc = "Iterator for array of:"]
+    #[doc = "0x10..0x18 - Pin %s Control"]
+    #[inline(always)]
+    pub fn pinctrl_iter(&self) -> impl Iterator<Item = &PINCTRL> {
+        self.pinctrl.iter()
+    }
     #[doc = "0x10 - Pin 0 Control"]
     #[inline(always)]
-    pub const fn pin0ctrl(&self) -> &PIN0CTRL {
-        &self.pin0ctrl
+    pub const fn pin0ctrl(&self) -> &PINCTRL {
+        self.pinctrl(0)
     }
     #[doc = "0x11 - Pin 1 Control"]
     #[inline(always)]
-    pub const fn pin1ctrl(&self) -> &PIN1CTRL {
-        &self.pin1ctrl
+    pub const fn pin1ctrl(&self) -> &PINCTRL {
+        self.pinctrl(1)
     }
     #[doc = "0x12 - Pin 2 Control"]
     #[inline(always)]
-    pub const fn pin2ctrl(&self) -> &PIN2CTRL {
-        &self.pin2ctrl
+    pub const fn pin2ctrl(&self) -> &PINCTRL {
+        self.pinctrl(2)
     }
     #[doc = "0x13 - Pin 3 Control"]
     #[inline(always)]
-    pub const fn pin3ctrl(&self) -> &PIN3CTRL {
-        &self.pin3ctrl
+    pub const fn pin3ctrl(&self) -> &PINCTRL {
+        self.pinctrl(3)
     }
     #[doc = "0x14 - Pin 4 Control"]
     #[inline(always)]
-    pub const fn pin4ctrl(&self) -> &PIN4CTRL {
-        &self.pin4ctrl
+    pub const fn pin4ctrl(&self) -> &PINCTRL {
+        self.pinctrl(4)
     }
     #[doc = "0x15 - Pin 5 Control"]
     #[inline(always)]
-    pub const fn pin5ctrl(&self) -> &PIN5CTRL {
-        &self.pin5ctrl
+    pub const fn pin5ctrl(&self) -> &PINCTRL {
+        self.pinctrl(5)
     }
     #[doc = "0x16 - Pin 6 Control"]
     #[inline(always)]
-    pub const fn pin6ctrl(&self) -> &PIN6CTRL {
-        &self.pin6ctrl
+    pub const fn pin6ctrl(&self) -> &PINCTRL {
+        self.pinctrl(6)
     }
     #[doc = "0x17 - Pin 7 Control"]
     #[inline(always)]
-    pub const fn pin7ctrl(&self) -> &PIN7CTRL {
-        &self.pin7ctrl
+    pub const fn pin7ctrl(&self) -> &PINCTRL {
+        self.pinctrl(7)
     }
 }
 #[doc = "DIR (rw) register accessor: Data Direction\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`dir::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`dir::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@dir`]
@@ -193,46 +197,11 @@ module"]
 pub type OUTTGL = crate::Reg<outtgl::OUTTGL_SPEC>;
 #[doc = "Output Value Toggle"]
 pub mod outtgl;
-#[doc = "PIN0CTRL (rw) register accessor: Pin 0 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin0ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin0ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin0ctrl`]
+#[doc = "PINCTRL (rw) register accessor: Pin %s Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pinctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pinctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pinctrl`]
 module"]
-pub type PIN0CTRL = crate::Reg<pin0ctrl::PIN0CTRL_SPEC>;
-#[doc = "Pin 0 Control"]
-pub mod pin0ctrl;
-#[doc = "PIN1CTRL (rw) register accessor: Pin 1 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin1ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin1ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin1ctrl`]
-module"]
-pub type PIN1CTRL = crate::Reg<pin1ctrl::PIN1CTRL_SPEC>;
-#[doc = "Pin 1 Control"]
-pub mod pin1ctrl;
-#[doc = "PIN2CTRL (rw) register accessor: Pin 2 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin2ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin2ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin2ctrl`]
-module"]
-pub type PIN2CTRL = crate::Reg<pin2ctrl::PIN2CTRL_SPEC>;
-#[doc = "Pin 2 Control"]
-pub mod pin2ctrl;
-#[doc = "PIN3CTRL (rw) register accessor: Pin 3 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin3ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin3ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin3ctrl`]
-module"]
-pub type PIN3CTRL = crate::Reg<pin3ctrl::PIN3CTRL_SPEC>;
-#[doc = "Pin 3 Control"]
-pub mod pin3ctrl;
-#[doc = "PIN4CTRL (rw) register accessor: Pin 4 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin4ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin4ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin4ctrl`]
-module"]
-pub type PIN4CTRL = crate::Reg<pin4ctrl::PIN4CTRL_SPEC>;
-#[doc = "Pin 4 Control"]
-pub mod pin4ctrl;
-#[doc = "PIN5CTRL (rw) register accessor: Pin 5 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin5ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin5ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin5ctrl`]
-module"]
-pub type PIN5CTRL = crate::Reg<pin5ctrl::PIN5CTRL_SPEC>;
-#[doc = "Pin 5 Control"]
-pub mod pin5ctrl;
-#[doc = "PIN6CTRL (rw) register accessor: Pin 6 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin6ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin6ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin6ctrl`]
-module"]
-pub type PIN6CTRL = crate::Reg<pin6ctrl::PIN6CTRL_SPEC>;
-#[doc = "Pin 6 Control"]
-pub mod pin6ctrl;
-#[doc = "PIN7CTRL (rw) register accessor: Pin 7 Control\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pin7ctrl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pin7ctrl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pin7ctrl`]
-module"]
-pub type PIN7CTRL = crate::Reg<pin7ctrl::PIN7CTRL_SPEC>;
-#[doc = "Pin 7 Control"]
-pub mod pin7ctrl;
+pub type PINCTRL = crate::Reg<pinctrl::PINCTRL_SPEC>;
+#[doc = "Pin %s Control"]
+pub mod pinctrl;
 #[doc = "PINCONFIG (rw) register accessor: Pin Control Config\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`pinconfig::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`pinconfig::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@pinconfig`]
 module"]
 pub type PINCONFIG = crate::Reg<pinconfig::PINCONFIG_SPEC>;

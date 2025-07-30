@@ -85,17 +85,17 @@ impl From<bod::ctrla::SLEEP_A> for Mode {
 /// The configured level is loaded from fusebits on reset.
 #[derive(ufmt::derive::uDebug, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Level {
-    /// 1.8V
-    Level180V,
+    /// 1.9V
+    Level190V,
 
-    /// 2.15V
-    Level215V,
+    /// 2.45V
+    Level245V,
 
-    /// 2.6V
-    Level260V,
+    /// 2.7V
+    Level270V,
 
-    /// 2.95V
-    Level295V,
+    /// 2.85V
+    Level285V,
 
     /// 3.3V
     Level330V,
@@ -114,14 +114,14 @@ impl From<bod::ctrlb::LVL_A> for Level {
     fn from(value: bod::ctrlb::LVL_A) -> Self {
         use bod::ctrlb::LVL_A::*;
         match value {
-            BODLEVEL0 => Level::Level180V,
-            // BODLEVEL1 => Level::Level215V,
-            BODLEVEL2 => Level::Level260V,
-            // BODLEVEL3 => Level::Level295V,
+            BODLEVEL0 => Level::Level190V,
+            BODLEVEL1 => Level::Level245V,
+            BODLEVEL2 => Level::Level270V,
+            BODLEVEL3 => Level::Level285V,
             // BODLEVEL4 => Level::Level330V,
             // BODLEVEL5 => Level::Level370V,
             // BODLEVEL6 => Level::Level400V,
-            BODLEVEL7 => Level::Level420V,
+            // L7 => Level::Level420V,
         }
     }
 }
@@ -137,6 +137,7 @@ pub enum VoltageLevelThreshold {
 
     /// VLM threshold 25% above BOD threshold
     TwentyfivePercentAbove,
+    OFF,
 }
 
 impl From<VoltageLevelThreshold> for bod::vlmctrla::VLMLVL_A {
@@ -146,6 +147,7 @@ impl From<VoltageLevelThreshold> for bod::vlmctrla::VLMLVL_A {
             VoltageLevelThreshold::FivePercentAbove => _5ABOVE,
             VoltageLevelThreshold::FifteenPercentAbove => _15ABOVE,
             VoltageLevelThreshold::TwentyfivePercentAbove => _25ABOVE,
+            VoltageLevelThreshold::OFF => OFF,
         }
     }
 }
@@ -157,6 +159,7 @@ impl From<bod::vlmctrla::VLMLVL_A> for VoltageLevelThreshold {
             _5ABOVE => VoltageLevelThreshold::FivePercentAbove,
             _15ABOVE => VoltageLevelThreshold::FifteenPercentAbove,
             _25ABOVE => VoltageLevelThreshold::TwentyfivePercentAbove,
+            OFF => VoltageLevelThreshold::OFF,
         }
     }
 }
@@ -178,9 +181,9 @@ impl From<VlmConfiguration> for bod::intctrl::VLMCFG_A {
     fn from(value: VlmConfiguration) -> Self {
         use bod::intctrl::VLMCFG_A::*;
         match value {
-            VlmConfiguration::VoltageRisesAboveThreshold => ABOVE,
-            VlmConfiguration::VoltageFallsBelowThreshold => BELOW,
-            VlmConfiguration::Cross => CROSS,
+            VlmConfiguration::VoltageRisesAboveThreshold => RISING,
+            VlmConfiguration::VoltageFallsBelowThreshold => FALLING,
+            VlmConfiguration::Cross => BOTH,
         }
     }
 }
@@ -189,9 +192,9 @@ impl From<bod::intctrl::VLMCFG_A> for VlmConfiguration {
     fn from(value: bod::intctrl::VLMCFG_A) -> Self {
         use bod::intctrl::VLMCFG_A::*;
         match value {
-            ABOVE => VlmConfiguration::VoltageRisesAboveThreshold,
-            BELOW => VlmConfiguration::VoltageFallsBelowThreshold,
-            CROSS => VlmConfiguration::Cross,
+            RISING => VlmConfiguration::VoltageRisesAboveThreshold,
+            FALLING => VlmConfiguration::VoltageFallsBelowThreshold,
+            BOTH => VlmConfiguration::Cross,
         }
     }
 }
@@ -338,7 +341,7 @@ impl BrownoutDetector {
     /// Get the current monitor threshold for the voltage level monitor.
     #[inline]
     pub fn get_voltage_monitor_threshold(&self) -> VoltageLevelThreshold {
-        self.bod.vlmctrla().read().vlmlvl().variant().unwrap().into()
+        self.bod.vlmctrla().read().vlmlvl().variant().into()
     }
 
     /// Enable or disable the voltage level monitor interrupt.

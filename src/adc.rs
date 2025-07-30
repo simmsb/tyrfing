@@ -1,14 +1,11 @@
 use core::{marker::PhantomData, task::Poll};
 
-use atxtiny_hal::vref::{ADCReferenceVoltage, ReferenceVoltage, VrefExt};
-use avr_device::attiny1616::{
-    adc0::{
-        ctrla::RESSEL_A,
-        ctrlb::SAMPNUM_A,
-        ctrlc::{PRESC_A, REFSEL_A},
-        ctrld::INITDLY_A,
-        muxpos::MUXPOS_A,
-    },
+use atxtiny_hal::{
+    pac::adc0::{ctrla::CONVMODE_A, ctrld::SAMPDLY_A},
+    vref::{ADCReferenceVoltage, ReferenceVoltage, VrefExt},
+};
+use avr_device::avr32dd20::{
+    adc0::{ctrla::RESSEL_A, ctrlb::SAMPNUM_A, ctrlc::PRESC_A, ctrld::INITDLY_A, muxpos::MUXPOS_A},
     ADC0, SIGROW, VREF,
 };
 use embassy_sync::waitqueue::AtomicWaker;
@@ -18,7 +15,7 @@ use crate::peripheral_ref::{Peripheral, PeripheralRef};
 
 static ADC0_WAKER: AtomicWaker = AtomicWaker::new();
 
-#[avr_device::interrupt(attiny1616)]
+#[avr_device::interrupt(avr32dd20)]
 unsafe fn ADC0_RESRDY() {
     let mut adc = ADC0::steal();
 
@@ -82,25 +79,24 @@ impl<INST: AdcRegExt> Adc<INST, Disabled> {
 pub struct Temperature<T>(pub T);
 
 impl Temperature<u16> {
-    pub fn kelvin_times_64(self) -> u16 {
-        let r = self.0 << 4;
-        let offset = -((unsafe { SIGROW::steal() }.tempsense1().read().bits() as i8 as i32) << 6);
-        let gain = unsafe { SIGROW::steal() }.tempsense0().read().bits() as u32;
+    pub fn from_raw(val: u16) -> Self {
+        let val = val as u32;
+        let offset = unsafe { SIGROW::steal().tempsense1().read().bits() as u32 };
+        let gain = unsafe { SIGROW::steal().tempsense0().read().bits() as u32 };
 
-        let r = r as u32;
-        let r = r.saturating_add_signed(offset);
+        let r = (offset << 4) - val;
         let r = r * gain;
         let r = r + 65536 / 8;
-        let r = r >> 8;
-        r as u16
+
+        Self((r >> 10) as u16)
     }
 
-    pub const fn kelvin_times_64_from_celcius(val: i16) -> Self {
+    pub const fn from_celcius(val: i16) -> Self {
         Temperature(((val + 275) as u16) * 64)
     }
 
     pub fn celcius(self) -> i16 {
-        (self.kelvin_times_64() / 64) as i16 - 275
+        (self.0 / 64) as i16 - 275
     }
 
     pub fn smooth_with(self, smoother: &mut crate::sensing::Smoother) -> Self {
@@ -110,50 +106,27 @@ impl Temperature<u16> {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Voltage<T>(pub T);
 
 impl Voltage<u16> {
-    pub const fn volts_times_40(self) -> u8 {
-        let r = self.0 << 4;
-        const NUMERATOR: u32 = (40.0 * 1.5 * 4096.0) as u32;
-
-        let n = (r >> 4) as u32;
-
-        if n == 0 {
-            return 0;
-        }
-
-        (NUMERATOR / n) as u8
+    pub const fn volts_times_50(self) -> u8 {
+        ((self.0 + 64) / 128) as u8
     }
 
     pub const fn volts_to_adc_output(volts: f32) -> Voltage<u16> {
-        Voltage((6144.0 / volts) as u16)
+        Voltage((volts * 128.0 - 64.0) as u16)
     }
 
     pub const fn volts_times_100(self) -> u16 {
-        let r = self.volts_times_40() as u16;
-        r * 2 + r / 2
+        let r = self.volts_times_50() as u16;
+        r * 2
     }
 
     pub fn smooth_with(self, smoother: &mut crate::sensing::Smoother) -> Self {
         smoother.update(self.0);
 
         Self(smoother.0)
-    }
-}
-
-impl PartialOrd for Voltage<u16> {
-    // volts stores MAX / n, so a larger voltage is represented by a smaller value of n
-
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        core::cmp::Reverse(self.0).partial_cmp(&core::cmp::Reverse(other.0))
-    }
-}
-
-impl Ord for Voltage<u16> {
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        core::cmp::Reverse(self.0).cmp(&core::cmp::Reverse(other.0))
     }
 }
 
@@ -177,16 +150,18 @@ impl Adc<ADC0, Enabled> {
     }
 
     pub fn read_voltage(&mut self) -> impl Future<Output = Voltage<u16>> + '_ {
-        self.adc.set_initdelay(INITDLY_A::DLY64);
-
         // steal vref, TODO: rework api so ReferenceVoltage holds a ref to it
         let mut vref = unsafe { VREF::steal() }.constrain();
-        ADCReferenceVoltage::voltage(&mut vref, ReferenceVoltage::_1V50);
+        ADCReferenceVoltage::voltage(&mut vref, ReferenceVoltage::_1V024);
 
-        self.adc.set_muxpos(MUXPOS_A::INTREF);
-        self.adc.set_sampnum(SAMPNUM_A::ACC4);
-
-        self.adc.set_c_state(PRESC_A::DIV16, REFSEL_A::VDDREF, true);
+        self.adc.set_convmode(CONVMODE_A::SINGLEENDED);
+        self.adc.set_resolution(RESSEL_A::_12BIT);
+        self.adc.set_leftadj(true);
+        self.adc.set_freerun(true);
+        self.adc.set_run_standby(true);
+        self.adc.set_muxpos(MUXPOS_A::TEMPSENSE);
+        self.adc.set_sampnum(SAMPNUM_A::ACC16);
+        self.adc.set_prescaler(PRESC_A::DIV4);
 
         self.adc.start();
 
@@ -195,19 +170,23 @@ impl Adc<ADC0, Enabled> {
 
     pub fn read_temp(&mut self) -> impl Future<Output = Temperature<u16>> + '_ {
         self.adc.set_initdelay(INITDLY_A::DLY64);
+        self.adc.set_sampdelay(SAMPDLY_A::DLY10);
 
         // steal vref, TODO: rework api so ReferenceVoltage holds a ref to it
         let mut vref = unsafe { VREF::steal() }.constrain();
-        ADCReferenceVoltage::voltage(&mut vref, ReferenceVoltage::_1V10);
+        ADCReferenceVoltage::voltage(&mut vref, ReferenceVoltage::_2V048);
 
-        self.adc.set_muxpos(MUXPOS_A::TEMPSENSE);
-        self.adc.set_sampnum(SAMPNUM_A::ACC4);
-
-        self.adc.set_c_state(PRESC_A::DIV16, REFSEL_A::INTREF, true);
-
+        self.adc.set_convmode(CONVMODE_A::SINGLEENDED);
+        self.adc.set_resolution(RESSEL_A::_12BIT);
+        self.adc.set_freerun(true);
+        self.adc.set_run_standby(true);
+        self.adc.set_muxpos(MUXPOS_A::VDDDIV10);
+        self.adc.set_sampnum(SAMPNUM_A::ACC16);
+        self.adc.set_prescaler(PRESC_A::DIV4);
+        self.adc.set_samplen(32);
         self.adc.start();
 
-        self.read().map(Temperature)
+        self.read().map(Temperature::from_raw)
     }
 }
 
@@ -247,8 +226,9 @@ pub trait AdcRegExt {
     type MuxPos;
     type SampNum;
     type PreScaler;
-    type RefSel;
     type InitDelay;
+    type SampDelay;
+    type ConvMode;
 
     fn enable(&mut self, value: bool);
     fn start(&mut self);
@@ -258,6 +238,8 @@ pub trait AdcRegExt {
     fn set_freerun(&mut self, value: bool);
     fn set_run_standby(&mut self, value: bool);
     fn set_resolution(&mut self, variant: Self::Resolution);
+    fn set_convmode(&mut self, variant: Self::ConvMode);
+    fn set_leftadj(&mut self, on: bool);
 
     fn enable_interrupt(&mut self, enabled: bool);
     fn is_interrupt_enabled(&self) -> bool;
@@ -265,13 +247,12 @@ pub trait AdcRegExt {
 
     fn set_muxpos(&mut self, variant: Self::MuxPos);
     fn set_sampnum(&mut self, variant: Self::SampNum);
+    fn set_samplen(&mut self, n: u8);
 
-    fn set_c_state(&mut self, prescaler: Self::PreScaler, refsel: Self::RefSel, sampcap: bool);
     fn set_prescaler(&mut self, variant: Self::PreScaler);
-    fn set_refsel(&mut self, variant: Self::RefSel);
-    fn set_sampcap(&mut self, value: bool);
 
     fn set_initdelay(&mut self, variant: Self::InitDelay);
+    fn set_sampdelay(&mut self, variant: Self::SampDelay);
 }
 
 impl AdcRegExt for ADC0 {
@@ -279,8 +260,9 @@ impl AdcRegExt for ADC0 {
     type MuxPos = MUXPOS_A;
     type SampNum = SAMPNUM_A;
     type PreScaler = PRESC_A;
-    type RefSel = REFSEL_A;
     type InitDelay = INITDLY_A;
+    type SampDelay = SAMPDLY_A;
+    type ConvMode = CONVMODE_A;
 
     fn enable(&mut self, value: bool) {
         self.ctrla().modify(|_, w| w.enable().variant(value))
@@ -310,6 +292,14 @@ impl AdcRegExt for ADC0 {
         self.ctrla().modify(|_, w| w.ressel().variant(variant))
     }
 
+    fn set_convmode(&mut self, variant: Self::ConvMode) {
+        self.ctrla().modify(|_, w| w.convmode().variant(variant))
+    }
+
+    fn set_leftadj(&mut self, on: bool) {
+        self.ctrla().modify(|_, w| w.leftadj().variant(on))
+    }
+
     fn enable_interrupt(&mut self, enabled: bool) {
         self.intctrl().modify(|_, w| w.resrdy().variant(enabled))
     }
@@ -330,30 +320,19 @@ impl AdcRegExt for ADC0 {
         self.ctrlb().modify(|_, w| w.sampnum().variant(variant))
     }
 
+    fn set_samplen(&mut self, value: u8) {
+        self.sampctrl().modify(|_, w| w.samplen().variant(value))
+    }
+
     fn set_prescaler(&mut self, variant: Self::PreScaler) {
         self.ctrlc().modify(|_, w| w.presc().variant(variant))
     }
 
-    fn set_refsel(&mut self, variant: Self::RefSel) {
-        self.ctrlc().modify(|_, w| w.refsel().variant(variant))
-    }
-
-    fn set_sampcap(&mut self, value: bool) {
-        self.ctrlc().modify(|_, w| w.sampcap().variant(value))
-    }
-
-    fn set_c_state(&mut self, prescaler: Self::PreScaler, refsel: Self::RefSel, sampcap: bool) {
-        self.ctrlc().modify(|_, w| {
-            w.presc()
-                .variant(prescaler)
-                .refsel()
-                .variant(refsel)
-                .sampcap()
-                .variant(sampcap)
-        })
-    }
-
     fn set_initdelay(&mut self, variant: Self::InitDelay) {
         self.ctrld().modify(|_, w| w.initdly().variant(variant))
+    }
+
+    fn set_sampdelay(&mut self, variant: Self::SampDelay) {
+        self.ctrld().modify(|_, w| w.sampdly().variant(variant))
     }
 }

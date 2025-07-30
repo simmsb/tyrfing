@@ -85,12 +85,12 @@ pub enum EventGenState {
 }
 
 #[embassy_executor::task]
-pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
+pub async fn debouncer(t: atxtiny_hal::gpio::PD4<Input>) {
     let mut t = crate::gpio::Pin::new(t.into_floating_input());
     let mut l = unsafe {
-        atxtiny_hal::avr_device::attiny1616::PORTC::steal()
+        atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
             .split()
-            .pc1
+            .pa4
             .into_push_pull_output()
     };
 
@@ -112,7 +112,6 @@ pub async fn debouncer(t: atxtiny_hal::gpio::PC3<Input>) {
         if t.pin().is_low().unwrap_infallible() {
             BUTTON_STATES.signal(ButtonState::Press);
             LOCKOUT_BUTTON_STATES.signal(ButtonState::Press);
-            crate::serial_println!("Got button: {}", v);
             // crate::power::set_level_gradual(if v { 255 } else { 0 });
         } else {
             continue;

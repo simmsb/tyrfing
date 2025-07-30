@@ -1,18 +1,12 @@
 //! # Basic timer support
 
 mod timer;
-mod counter;
-mod delay;
 mod pwm;
 
 pub use timer::*;
-pub use counter::*;
-pub use delay::*;
 pub use pwm::*;
 
 pub mod tca;
-pub mod tcb;
-pub mod tcb_8bit;
 pub mod rtc;
 
 use crate::time::*;
@@ -22,7 +16,6 @@ mod sealed {
 
     use super::{Error, TimerClock};
     use crate::time::*;
-    use crate::Toggle;
 
     pub trait General {
         const TIMER_WIDTH_BITS: u8;
@@ -44,12 +37,12 @@ mod sealed {
         fn is_counter_enabled(&self) -> bool;
 
         fn reset_count(&mut self);
-        fn read_count(&self) -> Self::CounterValue;
+        fn read_count(&self) -> (Self::CounterValue, Self::CounterValue);
 
-        fn configure_interrupt(&mut self, interrupt: Self::Interrupt, enable: impl Into<Toggle>);
-        fn is_interrupt_configured(&self, interrupt: Self::Interrupt) -> bool;
-        fn is_event_triggered(&self, event: Self::Event) -> bool;
-        fn clear_event(&mut self, event: Self::Event);
+        // fn configure_interrupt(&mut self, interrupt: Self::Interrupt, enable: impl Into<Toggle>);
+        // fn is_interrupt_configured(&self, interrupt: Self::Interrupt) -> bool;
+        // fn is_event_triggered(&self, event: Self::Event) -> bool;
+        // fn clear_event(&mut self, event: Self::Event);
     }
 
     pub trait AsClockSource: General {
@@ -59,7 +52,7 @@ mod sealed {
     }
 
     pub trait PeriodicMode: General {
-        fn set_periodic_mode(&mut self);
+        // fn set_periodic_mode(&mut self);
 
         #[inline(always)]
         fn set_period(&mut self, period: Self::CounterValue) -> Result<(), Error> {
@@ -73,7 +66,7 @@ mod sealed {
         }
 
         unsafe fn set_period_unchecked(&mut self, period: Self::CounterValue);
-        fn read_period() -> Self::CounterValue;
+        fn read_period() -> (Self::CounterValue, Self::CounterValue);
         fn trigger_update(&mut self);
         fn max_period() -> Self::CounterValue;
 
@@ -101,10 +94,10 @@ mod sealed {
     //        both for PWM-capable timers? RTC only has compare match but no PWM
     pub trait WithPwm: General + PeriodicMode {
         const CH_NUMBER: u8;
-        type GenerationMode;
+        // type GenerationMode;
         type CompareValue: Clone + Copy + Into<u32> + TryFrom<u32>;
 
-        fn set_pwm_mode(&mut self, mode: Self::GenerationMode);
+        fn set_pwm_mode(&mut self);
 
         // FIXME: passing some channel object wrapping a timer pointer or similar
         //        might be the better solution here. Otherwise we always need to
@@ -164,41 +157,3 @@ pub enum Error {
     ImpossiblePeriod,
 }
 
-pub trait TimerExt<TIM: Instance>: Sized {
-    /// Non-blocking [Counter] with custom fixed precision
-    fn counter<const FREQ: u32>(self, clk: TIM::ClockSource) -> Result<Counter<Self, FREQ>, Error>;
-
-    /// Non-blocking [Counter] with fixed precision of 1 ms (1 kHz sampling)
-    ///
-    /// Can wait from 2 ms to 65 sec for 16-bit timer and from 2 ms to 49 days for 32-bit timer.
-    fn counter_ms(self, clk: TIM::ClockSource) -> Result<CounterMs<Self>, Error> {
-        self.counter::<1_000>(clk)
-    }
-
-    /// Non-blocking [Counter] with fixed precision of 1 μs (1 MHz sampling)
-    ///
-    /// Can wait from 2 μs to 65 ms for 16-bit timer and from 2 μs to 71 min for 32-bit timer.
-    fn counter_us(self, clk: TIM::ClockSource) -> Result<CounterUs<Self>, Error> {
-        self.counter::<1_000_000>(clk)
-    }
-
-    /// Non-blocking [Counter] with dynamic precision which uses `Hertz` as Duration units
-    fn counter_hz(self, clk: TIM::ClockSource) -> CounterHz<Self> where Self: Instance;
-
-    /// Blocking [Delay] with custom fixed precision
-    fn delay<const FREQ: u32>(self, clk: TIM::ClockSource) -> Result<Delay<Self, FREQ>, Error>;
-}
-
-impl<TIM: Instance + PeriodicMode> TimerExt<TIM> for TIM {
-    fn counter<const FREQ: u32>(self, clk: TIM::ClockSource) -> Result<Counter<Self, FREQ>, Error> {
-        Ok(FTimer::new(self, clk)?.counter())
-    }
-
-    fn counter_hz(self, clk: TIM::ClockSource) -> CounterHz<Self> {
-        Timer::new(self, clk).counter_hz()
-    }
-
-    fn delay<const FREQ: u32>(self, clk: TIM::ClockSource) -> Result<Delay<Self, FREQ>, Error> {
-        Ok(FTimer::new(self, clk)?.delay())
-    }
-}

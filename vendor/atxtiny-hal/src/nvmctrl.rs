@@ -11,6 +11,9 @@ use avr_device::{ccp::ProtectedWritable, attiny817::nvmctrl::ctrla::CMD_A};
 #[cfg(feature = "attiny1616")]
 use avr_device::{ccp::ProtectedWritable, attiny1616::nvmctrl::ctrla::CMD_A};
 
+#[cfg(feature = "avr32dd20")]
+use avr_device::{ccp::ProtectedWritable, avr32dd20::nvmctrl::ctrla::CMD_A};
+
 // TODO: SIGROW  = 0x1100
 //       FUSES   = 0x1280
 //       USERROW = 0x1300
@@ -76,6 +79,28 @@ cfg_if! {
 
         /// Page size of the flash in data space
         pub const FLASH_PAGE_SIZE:  usize = 64;
+
+
+        /// Start address of the EEPROM in data space
+        pub const EEPROM_START:     usize = 0x1400;
+
+        /// End address of the EEPROM in data space
+        pub const EEPROM_END:       usize = 0x14FF;
+
+        /// Page size of the EEPROM in data space
+        pub const EEPROM_PAGE_SIZE: usize = 32;
+
+    } else if #[cfg(any(
+        feature = "avr32dd20",
+    ))] {
+        /// Start address of the flash in data space
+        pub const FLASH_START:      usize = 0x8000;
+
+        /// End address of the flash in data space
+        pub const FLASH_END:        usize = 0xFFFF;
+
+        /// Page size of the flash in data space
+        pub const FLASH_PAGE_SIZE:  usize = 512;
 
 
         /// Start address of the EEPROM in data space
@@ -229,7 +254,7 @@ impl FlashAccess<'_> {
 
         while self.nvmctrl.status().read().fbusy().bit_is_set() {}
 
-        if self.nvmctrl.status().read().wrerror().bit_is_set() {
+        if self.nvmctrl.status().read().error().variant() != Some(avr_device::avr32dd20::nvmctrl::status::ERROR_A::NOERROR) {
             return Err(Error::Write);
         }
 
@@ -303,7 +328,7 @@ impl EepromAccess<'_> {
 
         while self.nvmctrl.status().read().eebusy().bit_is_set() {}
 
-        if self.nvmctrl.status().read().wrerror().bit_is_set() {
+        if self.nvmctrl.status().read().error().variant() != Some(avr_device::avr32dd20::nvmctrl::status::ERROR_A::NOERROR) {
             return Err(Error::Write);
         }
 

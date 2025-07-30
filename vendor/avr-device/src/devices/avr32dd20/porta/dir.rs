@@ -3,37 +3,86 @@ pub type R = crate::R<DIR_SPEC>;
 #[doc = "Register `DIR` writer"]
 pub type W = crate::W<DIR_SPEC>;
 #[doc = "Field `PA0` reader - Pin A0"]
-pub type PA0_R = crate::BitReader;
+pub type PA0_R = crate::BitReader<PA0_A>;
+#[doc = "Pin A0\n\nValue on reset: 0"]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PA0_A {
+    #[doc = "0: Input"]
+    INPUT = 0,
+    #[doc = "1: Output"]
+    OUTPUT = 1,
+}
+impl From<PA0_A> for bool {
+    #[inline(always)]
+    fn from(variant: PA0_A) -> Self {
+        variant as u8 != 0
+    }
+}
+impl PA0_R {
+    #[doc = "Get enumerated values variant"]
+    #[inline(always)]
+    pub const fn variant(&self) -> PA0_A {
+        match self.bits {
+            false => PA0_A::INPUT,
+            true => PA0_A::OUTPUT,
+        }
+    }
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn is_input(&self) -> bool {
+        *self == PA0_A::INPUT
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn is_output(&self) -> bool {
+        *self == PA0_A::OUTPUT
+    }
+}
 #[doc = "Field `PA0` writer - Pin A0"]
-pub type PA0_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub type PA0_W<'a, REG> = crate::BitWriter<'a, REG, PA0_A>;
+impl<'a, REG> PA0_W<'a, REG>
+where
+    REG: crate::Writable + crate::RegisterSpec,
+{
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn input(self) -> &'a mut crate::W<REG> {
+        self.variant(PA0_A::INPUT)
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn output(self) -> &'a mut crate::W<REG> {
+        self.variant(PA0_A::OUTPUT)
+    }
+}
 #[doc = "Field `PA1` reader - Pin A1"]
-pub type PA1_R = crate::BitReader;
-#[doc = "Field `PA1` writer - Pin A1"]
-pub type PA1_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_R as PA1_R;
 #[doc = "Field `PA2` reader - Pin A2"]
-pub type PA2_R = crate::BitReader;
-#[doc = "Field `PA2` writer - Pin A2"]
-pub type PA2_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_R as PA2_R;
 #[doc = "Field `PA3` reader - Pin A3"]
-pub type PA3_R = crate::BitReader;
-#[doc = "Field `PA3` writer - Pin A3"]
-pub type PA3_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_R as PA3_R;
 #[doc = "Field `PA4` reader - Pin A4"]
-pub type PA4_R = crate::BitReader;
-#[doc = "Field `PA4` writer - Pin A4"]
-pub type PA4_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_R as PA4_R;
 #[doc = "Field `PA5` reader - Pin A5"]
-pub type PA5_R = crate::BitReader;
-#[doc = "Field `PA5` writer - Pin A5"]
-pub type PA5_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_R as PA5_R;
 #[doc = "Field `PA6` reader - Pin A6"]
-pub type PA6_R = crate::BitReader;
-#[doc = "Field `PA6` writer - Pin A6"]
-pub type PA6_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_R as PA6_R;
 #[doc = "Field `PA7` reader - Pin A7"]
-pub type PA7_R = crate::BitReader;
+pub use PA0_R as PA7_R;
+#[doc = "Field `PA1` writer - Pin A1"]
+pub use PA0_W as PA1_W;
+#[doc = "Field `PA2` writer - Pin A2"]
+pub use PA0_W as PA2_W;
+#[doc = "Field `PA3` writer - Pin A3"]
+pub use PA0_W as PA3_W;
+#[doc = "Field `PA4` writer - Pin A4"]
+pub use PA0_W as PA4_W;
+#[doc = "Field `PA5` writer - Pin A5"]
+pub use PA0_W as PA5_W;
+#[doc = "Field `PA6` writer - Pin A6"]
+pub use PA0_W as PA6_W;
 #[doc = "Field `PA7` writer - Pin A7"]
-pub type PA7_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PA0_W as PA7_W;
 impl R {
     #[doc = "Bit 0 - Pin A0"]
     #[inline(always)]

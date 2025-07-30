@@ -5,25 +5,19 @@ import itertools
 from pprint import pprint
 
 class RefVoltage(Enum):
-    v0_5 = "ReferenceVoltage::_0V55"
-    v1_1 = "ReferenceVoltage::_1V10"
-    v1_5 = "ReferenceVoltage::_1V50"
+    v1_024 = "ReferenceVoltage::_1V024"
+    v2_048 = "ReferenceVoltage::_2V048"
     v2_5 = "ReferenceVoltage::_2V50"
     # v4_3 = "ReferenceVoltage::_4V34"
 
     def voltage(self):
         match self:
-            case RefVoltage.v0_5:
-                return 0.55
-            case RefVoltage.v1_1:
-                return 1.1
-            case RefVoltage.v1_5:
-                return 1.5
+            case RefVoltage.v1_024:
+                return 1.024
+            case RefVoltage.v2_048:
+                return 2.048
             case RefVoltage.v2_5:
                 return 2.5
-            # case RefVoltage.v4_3:
-            #     # This vref is constrained by VDD being 3.3v
-            #     return 3.3
 
 class PathLevel(Enum):
     one = "PathLevel::One"
@@ -39,6 +33,9 @@ class PathLevel(Enum):
             case PathLevel.three:
                 return 100 * 100
 
+adc_range = 2**10
+num_levels = 256
+
 @dataclass
 class Level:
     ref: RefVoltage
@@ -46,7 +43,7 @@ class Level:
     adc_level: int
 
     def calc_output(self) -> float:
-        adc_out = (self.adc_level / 255.0) * self.ref.voltage()
+        adc_out = (self.adc_level / adc_range) * self.ref.voltage()
         return adc_out * self.path_level.output_scale()
 
 def closest_level(levels: List[Level], desired: float) -> Level:
@@ -54,16 +51,16 @@ def closest_level(levels: List[Level], desired: float) -> Level:
 
 def calc_levels() -> List[Level]:
     levels = [Level(ref, path_level, adc_level) for ref, path_level, adc_level in itertools.product(
-        [RefVoltage.v0_5, RefVoltage.v1_1, RefVoltage.v1_5, RefVoltage.v2_5],
+        [RefVoltage.v1_024, RefVoltage.v2_048, RefVoltage.v2_5],
         PathLevel,
-        range(256)
-        )] #+ [Level(RefVoltage.v4_3, PathLevel.three, 255)]
+        range(adc_range)
+        )]
 
     highest_output = max(levels, key=lambda l: l.calc_output()).calc_output()
 
     factor = 4
 
-    return [closest_level(levels, highest_output * ((x / 254) ** factor)) for x in range(255)]
+    return [closest_level(levels, highest_output * ((x / (num_levels - 1)) ** factor)) for x in range(num_levels)]
 
 pprint(calc_levels())
 

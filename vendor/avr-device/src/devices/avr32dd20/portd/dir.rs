@@ -3,21 +3,70 @@ pub type R = crate::R<DIR_SPEC>;
 #[doc = "Register `DIR` writer"]
 pub type W = crate::W<DIR_SPEC>;
 #[doc = "Field `PD4` reader - Pin D4"]
-pub type PD4_R = crate::BitReader;
+pub type PD4_R = crate::BitReader<PD4_A>;
+#[doc = "Pin D4\n\nValue on reset: 0"]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PD4_A {
+    #[doc = "0: Input"]
+    INPUT = 0,
+    #[doc = "1: Output"]
+    OUTPUT = 1,
+}
+impl From<PD4_A> for bool {
+    #[inline(always)]
+    fn from(variant: PD4_A) -> Self {
+        variant as u8 != 0
+    }
+}
+impl PD4_R {
+    #[doc = "Get enumerated values variant"]
+    #[inline(always)]
+    pub const fn variant(&self) -> PD4_A {
+        match self.bits {
+            false => PD4_A::INPUT,
+            true => PD4_A::OUTPUT,
+        }
+    }
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn is_input(&self) -> bool {
+        *self == PD4_A::INPUT
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn is_output(&self) -> bool {
+        *self == PD4_A::OUTPUT
+    }
+}
 #[doc = "Field `PD4` writer - Pin D4"]
-pub type PD4_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub type PD4_W<'a, REG> = crate::BitWriter<'a, REG, PD4_A>;
+impl<'a, REG> PD4_W<'a, REG>
+where
+    REG: crate::Writable + crate::RegisterSpec,
+{
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn input(self) -> &'a mut crate::W<REG> {
+        self.variant(PD4_A::INPUT)
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn output(self) -> &'a mut crate::W<REG> {
+        self.variant(PD4_A::OUTPUT)
+    }
+}
 #[doc = "Field `PD5` reader - Pin D5"]
-pub type PD5_R = crate::BitReader;
-#[doc = "Field `PD5` writer - Pin D5"]
-pub type PD5_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PD4_R as PD5_R;
 #[doc = "Field `PD6` reader - Pin D6"]
-pub type PD6_R = crate::BitReader;
-#[doc = "Field `PD6` writer - Pin D6"]
-pub type PD6_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PD4_R as PD6_R;
 #[doc = "Field `PD7` reader - Pin D7"]
-pub type PD7_R = crate::BitReader;
+pub use PD4_R as PD7_R;
+#[doc = "Field `PD5` writer - Pin D5"]
+pub use PD4_W as PD5_W;
+#[doc = "Field `PD6` writer - Pin D6"]
+pub use PD4_W as PD6_W;
 #[doc = "Field `PD7` writer - Pin D7"]
-pub type PD7_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PD4_W as PD7_W;
 impl R {
     #[doc = "Bit 4 - Pin D4"]
     #[inline(always)]

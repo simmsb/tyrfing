@@ -11,7 +11,7 @@ pub struct RegisterBlock {
     dbgctrl: DBGCTRL,
     temp: TEMP,
     cnt: CNT,
-    ccmp: CCMP,
+    _reserved_9_ccmp: [u8; 0x02],
 }
 impl RegisterBlock {
     #[doc = "0x00 - Control A"]
@@ -59,10 +59,20 @@ impl RegisterBlock {
     pub const fn cnt(&self) -> &CNT {
         &self.cnt
     }
+    #[doc = "0x0c - Compare Capture low bit"]
+    #[inline(always)]
+    pub const fn ccmpl(&self) -> &CCMPL {
+        unsafe { &*(self as *const Self).cast::<u8>().add(12).cast() }
+    }
     #[doc = "0x0c - Compare or Capture"]
     #[inline(always)]
     pub const fn ccmp(&self) -> &CCMP {
-        &self.ccmp
+        unsafe { &*(self as *const Self).cast::<u8>().add(12).cast() }
+    }
+    #[doc = "0x0d - Compare Capture high bit"]
+    #[inline(always)]
+    pub const fn ccmph(&self) -> &CCMPH {
+        unsafe { &*(self as *const Self).cast::<u8>().add(13).cast() }
     }
 }
 #[doc = "CCMP (rw) register accessor: Compare or Capture\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`ccmp::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`ccmp::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@ccmp`]
@@ -115,3 +125,13 @@ module"]
 pub type TEMP = crate::Reg<temp::TEMP_SPEC>;
 #[doc = "Temporary Value"]
 pub mod temp;
+#[doc = "CCMPL (rw) register accessor: Compare Capture low bit\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`ccmpl::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`ccmpl::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@ccmpl`]
+module"]
+pub type CCMPL = crate::Reg<ccmpl::CCMPL_SPEC>;
+#[doc = "Compare Capture low bit"]
+pub mod ccmpl;
+#[doc = "CCMPH (rw) register accessor: Compare Capture high bit\n\nYou can [`read`](crate::generic::Reg::read) this register and get [`ccmph::R`].  You can [`reset`](crate::generic::Reg::reset), [`write`](crate::generic::Reg::write), [`write_with_zero`](crate::generic::Reg::write_with_zero) this register using [`ccmph::W`]. You can also [`modify`](crate::generic::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).\n\nFor information about available fields see [`mod@ccmph`]
+module"]
+pub type CCMPH = crate::Reg<ccmph::CCMPH_SPEC>;
+#[doc = "Compare Capture high bit"]
+pub mod ccmph;

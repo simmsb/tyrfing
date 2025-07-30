@@ -1,13 +1,13 @@
 use atxtiny_hal::{
     clkctrl::Clocks,
-    gpio::{Input, PB0, PB1, PC0},
-    portmux::Portmux,
+    gpio::{self, Input},
+    pac::{portmux, TCA0},
+    portmux::{Portmux, PortmuxTCARoutes, TCA0PortA},
     prelude::*,
-    timer::tcb::Tcb8bitPwmCapable,
+    timer::tca::TcaPinset,
 };
-use avr_device::attiny1616::{TCA0, TCB0};
 use avr_hal_generic::prelude::_unwrap_infallible_UnwrapInfallible;
-use cichlid::ColorRGB;
+use cichlid::{color_codes::Brown, ColorRGB};
 
 use crate::{adc::Voltage, sleep::Mug};
 
@@ -38,43 +38,45 @@ struct AuxLeds {
     pwm1: atxtiny_hal::timer::Pwm<
         TCA0,
         (
-            atxtiny_hal::timer::Ch<{ atxtiny_hal::timer::C1 }>,
             atxtiny_hal::timer::Ch<{ atxtiny_hal::timer::C2 }>,
+            atxtiny_hal::timer::Ch<{ atxtiny_hal::timer::C3 }>,
+            atxtiny_hal::timer::Ch<{ atxtiny_hal::timer::C4 }>,
         ),
         (
-            atxtiny_hal::timer::tca::TcaPinset<
+            TcaPinset<
+                'static,
                 TCA0,
                 atxtiny_hal::gpio::Pin<
-                    atxtiny_hal::gpio::Portb,
-                    atxtiny_hal::gpio::U<0>,
-                    atxtiny_hal::gpio::Output<atxtiny_hal::gpio::Stateless>,
-                >,
-                { atxtiny_hal::timer::C1 },
-            >,
-            atxtiny_hal::timer::tca::TcaPinset<
-                TCA0,
-                atxtiny_hal::gpio::Pin<
-                    atxtiny_hal::gpio::Portb,
+                    atxtiny_hal::gpio::Porta,
                     atxtiny_hal::gpio::U<1>,
                     atxtiny_hal::gpio::Output<atxtiny_hal::gpio::Stateless>,
                 >,
+                TCA0PortA,
                 { atxtiny_hal::timer::C2 },
             >,
-        ),
-        31250,
-    >,
-    pwm2: atxtiny_hal::timer::Pwm<
-        atxtiny_hal::timer::tcb_8bit::TCB8Bit,
-        atxtiny_hal::timer::Ch<{ atxtiny_hal::timer::C1 }>,
-        atxtiny_hal::timer::tcb::TcbPinset<
-            atxtiny_hal::timer::tcb_8bit::TCB8Bit,
-            atxtiny_hal::gpio::Pin<
-                atxtiny_hal::gpio::Portc,
-                atxtiny_hal::gpio::U<0>,
-                atxtiny_hal::gpio::Output<atxtiny_hal::gpio::Stateless>,
+            TcaPinset<
+                'static,
+                TCA0,
+                atxtiny_hal::gpio::Pin<
+                    atxtiny_hal::gpio::Porta,
+                    atxtiny_hal::gpio::U<2>,
+                    atxtiny_hal::gpio::Output<atxtiny_hal::gpio::Stateless>,
+                >,
+                TCA0PortA,
+                { atxtiny_hal::timer::C3 },
             >,
-            { atxtiny_hal::timer::C1 },
-        >,
+            TcaPinset<
+                'static,
+                TCA0,
+                atxtiny_hal::gpio::Pin<
+                    atxtiny_hal::gpio::Porta,
+                    atxtiny_hal::gpio::U<3>,
+                    atxtiny_hal::gpio::Output<atxtiny_hal::gpio::Stateless>,
+                >,
+                TCA0PortA,
+                { atxtiny_hal::timer::C4 },
+            >,
+        ),
         31250,
     >,
     mode: AuxLedsMode,
@@ -88,43 +90,40 @@ pub enum AuxLedsMode {
 }
 
 impl AuxLeds {
-    fn red_pwm(&mut self, value: u8) {
-        if value == 0 {
-            self.pwm2.disable(atxtiny_hal::timer::Channel::C1);
+    fn toggle_pwm(&mut self, on: bool) {
+        if on {
+            self.pwm1.enable(atxtiny_hal::timer::Channel::C2);
+            self.pwm1.enable(atxtiny_hal::timer::Channel::C3);
+            self.pwm1.enable(atxtiny_hal::timer::Channel::C4);
         } else {
-            self.pwm2.enable(atxtiny_hal::timer::Channel::C1);
+            self.pwm1.disable(atxtiny_hal::timer::Channel::C2);
+            self.pwm1.disable(atxtiny_hal::timer::Channel::C3);
+            self.pwm1.disable(atxtiny_hal::timer::Channel::C4);
         }
-        self.pwm2
+    }
+
+    fn red_pwm(&mut self, value: u8) {
+        self.pwm1
             .set_duty_time(
-                atxtiny_hal::timer::Channel::C1,
+                atxtiny_hal::timer::Channel::C2,
                 fugit::Duration::<u32, _, _>::from_ticks(value as u32),
             )
             .unwrap();
     }
 
     fn green_pwm(&mut self, value: u8) {
-        if value == 0 {
-            self.pwm1.disable(atxtiny_hal::timer::Channel::C1);
-        } else {
-            self.pwm1.enable(atxtiny_hal::timer::Channel::C1);
-        }
         self.pwm1
             .set_duty_time(
-                atxtiny_hal::timer::Channel::C1,
+                atxtiny_hal::timer::Channel::C3,
                 fugit::Duration::<u32, _, _>::from_ticks(value as u32),
             )
             .unwrap();
     }
 
     fn blue_pwm(&mut self, value: u8) {
-        if value == 0 {
-            self.pwm1.disable(atxtiny_hal::timer::Channel::C2);
-        } else {
-            self.pwm1.enable(atxtiny_hal::timer::Channel::C2);
-        }
         self.pwm1
             .set_duty_time(
-                atxtiny_hal::timer::Channel::C2,
+                atxtiny_hal::timer::Channel::C4,
                 fugit::Duration::<u32, _, _>::from_ticks(value as u32),
             )
             .unwrap();
@@ -138,17 +137,17 @@ impl AuxLeds {
     fn red_low(&mut self, on: bool) {
         if on {
             unsafe {
-                let mut p = atxtiny_hal::avr_device::attiny1616::PORTC::steal()
+                let mut p = atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
                     .split()
-                    .pc0
+                    .pa1
                     .into_push_pull_output();
                 p.set_high().unwrap_infallible();
             };
         } else {
             unsafe {
-                let mut p = atxtiny_hal::avr_device::attiny1616::PORTC::steal()
+                let mut p = atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
                     .split()
-                    .pc0
+                    .pa1
                     .into_push_pull_output();
                 p.set_low().unwrap_infallible();
             };
@@ -158,16 +157,16 @@ impl AuxLeds {
     fn green_low(&mut self, on: bool) {
         if on {
             unsafe {
-                atxtiny_hal::avr_device::attiny1616::PORTB::steal()
+                atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
                     .split()
-                    .pb0
+                    .pa2
                     .into_pull_up_input()
             };
         } else {
             unsafe {
-                let mut r = atxtiny_hal::avr_device::attiny1616::PORTB::steal()
+                let mut r = atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
                     .split()
-                    .pb0
+                    .pa2
                     .into_push_pull_output();
                 r.set_low().unwrap_infallible();
             };
@@ -177,16 +176,16 @@ impl AuxLeds {
     fn blue_low(&mut self, on: bool) {
         if on {
             unsafe {
-                atxtiny_hal::avr_device::attiny1616::PORTB::steal()
+                atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
                     .split()
-                    .pb1
+                    .pa3
                     .into_pull_up_input()
             };
         } else {
             unsafe {
-                let mut r = atxtiny_hal::avr_device::attiny1616::PORTB::steal()
+                let mut r = atxtiny_hal::avr_device::avr32dd20::PORTA::steal()
                     .split()
-                    .pb1
+                    .pa3
                     .into_push_pull_output();
                 r.set_low().unwrap_infallible();
             };
@@ -208,9 +207,10 @@ impl AuxLeds {
                         g: false,
                         b: false,
                     });
+                    self.toggle_pwm(true);
                 }
                 AuxLedsMode::Low => {
-                    self.set_rgb_pwm(ColorRGB::new(0, 0, 0));
+                    self.toggle_pwm(false);
                     self.set_rgb_low(Rgb1Bit {
                         r: false,
                         g: false,
@@ -223,9 +223,9 @@ impl AuxLeds {
     }
 
     fn set_rgb_pwm(&mut self, rgb: ColorRGB) {
-        self.red_pwm(rgb.r);
-        self.green_pwm(rgb.g);
-        self.blue_pwm(rgb.b);
+        self.red_pwm(rgb.r.min(254));
+        self.green_pwm(rgb.g.min(254));
+        self.blue_pwm(rgb.b.min(254));
     }
 }
 
@@ -294,10 +294,10 @@ async fn rainbow_aux(leds: &mut AuxLeds, prior: ColorRGB) -> ColorRGB {
 }
 
 fn volts_to_rgb() -> ColorRGB {
-    let volts = crate::sensing::VOLTAGE.get().volts_times_40();
+    let volts = crate::sensing::VOLTAGE.get().volts_times_50();
 
-    const MAX: u8 = Voltage::volts_to_adc_output(4.2).volts_times_40();
-    const MIN: u8 = Voltage::volts_to_adc_output(3.4).volts_times_40();
+    const MAX: u8 = Voltage::volts_to_adc_output(4.2).volts_times_50();
+    const MIN: u8 = Voltage::volts_to_adc_output(3.4).volts_times_50();
 
     // red
     let min_hue = 0u8;
@@ -402,58 +402,47 @@ async fn aux_control(mut leds: AuxLeds) {
 pub fn setup(
     spawner: embassy_executor::Spawner,
     tca0: TCA0,
-    tcb0: TCB0,
     clocks: Clocks,
-    portmux: &Portmux,
-    pb0: PB0<Input>,
-    pb1: PB1<Input>,
-    pc0: PC0<Input>,
+    portmux: PortmuxTCARoutes,
+    pa1: gpio::PA1<Input>,
+    pa2: gpio::PA2<Input>,
+    pa3: gpio::PA3<Input>,
 ) {
     let t = atxtiny_hal::timer::FTimer::<_, 31250>::new(tca0, clocks).unwrap();
-    let tca_clk = t.use_as_clock_source();
+
+    let portmux_proof = portmux.port_a_forever();
 
     let pwm_pins = (
-        pb0.into_stateless_push_pull_output().mux(portmux),
-        pb1.into_stateless_push_pull_output().mux(portmux),
+        TcaPinset::prove(pa1.into_stateless_push_pull_output(), &portmux_proof),
+        TcaPinset::prove(pa2.into_stateless_push_pull_output(), &portmux_proof),
+        TcaPinset::prove(pa3.into_stateless_push_pull_output(), &portmux_proof),
     );
 
     let mut pwm1 = t
-        .pwm(
-            pwm_pins,
-            fugit::Duration::<u32, _, _>::from_ticks(255),
-            atxtiny_hal::timer::tca::WaveformGenerationMode::SingleSlope,
-        )
-        .unwrap();
-
-    let pwm2_pins = pc0.into_stateless_push_pull_output().mux(portmux);
-
-    let t2 = atxtiny_hal::timer::FTimer::<_, 31250>::new(tcb0.into_8bit_pwm(), tca_clk).unwrap();
-    let mut pwm2 = t2
-        .pwm(pwm2_pins, fugit::Duration::<u32, _, _>::from_ticks(255), ())
+        .pwm(pwm_pins, fugit::Duration::<u32, _, _>::from_ticks(255))
         .unwrap();
 
     pwm1.set_duty_time(
-        atxtiny_hal::timer::Channel::C1,
+        atxtiny_hal::timer::Channel::C2,
         fugit::Duration::<u32, _, _>::from_ticks(150),
     )
     .unwrap();
     pwm1.set_duty_time(
-        atxtiny_hal::timer::Channel::C2,
+        atxtiny_hal::timer::Channel::C3,
         fugit::Duration::<u32, _, _>::from_ticks(100),
     )
     .unwrap();
-    pwm1.enable(atxtiny_hal::timer::Channel::C1);
-    pwm1.enable(atxtiny_hal::timer::Channel::C2);
-    pwm2.set_duty_time(
-        atxtiny_hal::timer::Channel::C1,
+    pwm1.set_duty_time(
+        atxtiny_hal::timer::Channel::C4,
         fugit::Duration::<u32, _, _>::from_ticks(200),
     )
     .unwrap();
-    pwm2.enable(atxtiny_hal::timer::Channel::C1);
+    pwm1.enable(atxtiny_hal::timer::Channel::C2);
+    pwm1.enable(atxtiny_hal::timer::Channel::C3);
+    pwm1.enable(atxtiny_hal::timer::Channel::C4);
 
     spawner.must_spawn(aux_control(AuxLeds {
         pwm1,
-        pwm2,
         mode: AuxLedsMode::Pwm,
         wakelock: Mug::new(),
     }))

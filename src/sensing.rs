@@ -1,7 +1,7 @@
 use crate::nonatomic::NonAtomicU16;
 
 use atxtiny_hal::watchdog::WatchdogTimer;
-use avr_device::attiny1616::ADC0;
+use avr_device::avr32dd20::ADC0;
 
 use crate::adc::{self, Temperature, Voltage};
 
@@ -60,15 +60,6 @@ pub async fn watchdock_tickler(mut wd: WatchdogTimer, mut adc: adc::Adc<ADC0, ad
 
         adc = adc_.disable();
         wd.feed();
-
-        #[cfg(feature = "logging")]
-        crate::serial_println!(
-            "Temp: {} ({}), Volts: {} ({})|||",
-            t.celcius(),
-            t.0,
-            v.volts_times_100(),
-            v.0
-        );
 
         embassy_time::Timer::after_millis(500).await;
     }

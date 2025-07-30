@@ -4,12 +4,6 @@ version = "0.1.0"
 authors = ["Andreas Galauner <andreas@galauner.de>"]
 edition = "2021"
 
-[[bin]]
-name = "main"
-test = false
-bench = false
-required-features = ["ms5611"]
-
 [dependencies]
 cfg-if = "1.0"
 panic-halt = "0.2"
@@ -26,7 +20,7 @@ void = { default-features = false, version = "1.0" }
 enumset = { version = "1.1", optional = true}
 
 [features]
-default = ["avr32dd20", "rt", "enumset", "ms5611", "fullpanic"]
+default = ["avr32dd20", "rt", "enumset"]
 device-selected = []
 rt = ["avr-device/rt"]
 fullpanic = []
@@ -35,9 +29,6 @@ fullpanic = []
 #attiny817 = ["avr-device/attiny817", "device-selected"]
 attiny1616 = ["avr-device/attiny1616", "device-selected"]
 avr32dd20 = ["avr-device/avr32dd20", "device-selected"]
-
-# features for bins
-ms5611 = []
 
 [patch.crates-io]
 avr-device = { path = "../avr-device" }

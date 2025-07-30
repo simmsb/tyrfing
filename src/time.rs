@@ -1,6 +1,6 @@
 use atxtiny_hal::timer::rtc::{Pit, RTCClockSource};
 use avr_device::{
-    attiny1616::{rtc::pitctrla::PERIOD_A, RTC},
+    avr32dd20::{rtc::pitctrla::PERIOD_A, RTC},
     interrupt::{CriticalSection, Mutex},
 };
 use core::{
@@ -222,7 +222,7 @@ impl TimerQueue for AvrTc0EmbassyTimeDriver {
     }
 }
 
-#[avr_device::interrupt(attiny1616)]
+#[avr_device::interrupt(avr32dd20)]
 unsafe fn RTC_PIT() {
     handle_tick()
 }

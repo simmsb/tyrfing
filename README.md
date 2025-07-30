@@ -4,7 +4,7 @@
 https://github.com/simmsb/tyrfing/assets/5330444/455c9a46-7eb3-438b-a824-84d08574c565
 
 
-This is flashlight firmware for the lume1-6af (attiny1616), written in Rust. 
+This is flashlight firmware for the lume series of drivers (attiny1616/avr32dd20), written in Rust. 
 It supports thermal and voltage regulation that prevents LED and battery damage by reducing output as temperature increases, and prevents usage when the battery voltage is too low.
 
 The UI is implemented using async rust, which makes adding new modes of operation fairly trivial.
@@ -72,7 +72,7 @@ This project relies on and makes modifications to:
 - [Andúril](https://github.com/ToyKeeper/anduril): Used as a reference for AVR
   and power related things.
 
-## EMBASSY on an attiny1616
+## EMBASSY on an attiny1616/avr32dd20
 
 This is some messing around with embassy on AVR (attiny1616)
 

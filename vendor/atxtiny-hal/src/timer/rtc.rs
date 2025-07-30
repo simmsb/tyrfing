@@ -1,16 +1,19 @@
 //! # Real Time Counter
 
+#[cfg(feature = "attiny1616")]
 use avr_device::attiny1616::rtc::pitctrla::PERIOD_A;
+#[cfg(feature = "avr32dd20")]
+use avr_device::avr32dd20::rtc::pitctrla::PERIOD_A;
+
 #[cfg(feature = "enumset")]
 use enumset::EnumSetType;
 
 use crate::{
     pac::{rtc::ctrla, RTC},
     time::*,
-    Toggle,
 };
 
-use super::{General, Instance, PeriodicMode, TimerClock};
+use super::TimerClock;
 
 /// Interrupts for RTC
 #[derive(ufmt::derive::uDebug, Debug)]
@@ -39,8 +42,6 @@ pub enum RTCClockSource {
     TOSC1(Hertz),
 }
 
-impl Instance for RTC {}
-
 impl TimerClock for RTC {
     type ClockSource = RTCClockSource;
 
@@ -57,8 +58,8 @@ impl TimerClock for RTC {
     #[inline(always)]
     fn prepare_clock_source(&mut self, clk: Self::ClockSource) {
         match clk {
-            RTCClockSource::OSCULP32K_32K => self.clksel().write(|w| w.clksel().int32k()),
-            RTCClockSource::OSCULP32K_1K => self.clksel().write(|w| w.clksel().int1k()),
+            RTCClockSource::OSCULP32K_32K => self.clksel().write(|w| w.clksel().osc32k()),
+            RTCClockSource::OSCULP32K_1K => self.clksel().write(|w| w.clksel().osc1k()),
             //RTCClockSource::XOSC32K => self.clksel().write(|w| w.clksel().tosc32k()),
             RTCClockSource::TOSC1(_) => self.clksel().write(|w| w.clksel().extclk()),
         }
@@ -81,121 +82,6 @@ impl TimerClock for RTC {
     #[inline(always)]
     fn read_prescaler(&self) -> u16 {
         from_prescaler(self.ctrla().read().prescaler().variant())
-    }
-}
-
-impl General for RTC {
-    const TIMER_WIDTH_BITS: u8 = 16;
-    type CounterValue = u16;
-    type Interrupt = Interrupt;
-    type Event = Event;
-
-    #[inline(always)]
-    fn reset_counter_peripheral(&mut self) {}
-
-    #[inline(always)]
-    fn enable_counter(&mut self) {
-        while self.status().read().ctrlabusy().bit_is_set() {}
-        self.ctrla().modify(|_, w| w.rtcen().set_bit());
-    }
-
-    #[inline(always)]
-    fn disable_counter(&mut self) {
-        while self.status().read().ctrlabusy().bit_is_set() {}
-        self.ctrla().modify(|_, w| w.rtcen().clear_bit());
-    }
-
-    #[inline(always)]
-    fn is_counter_enabled(&self) -> bool {
-        self.ctrla().read().rtcen().bit_is_set()
-    }
-
-    #[inline(always)]
-    fn reset_count(&mut self) {
-        while self.status().read().cntbusy().bit_is_set() {}
-        self.cnt().reset();
-    }
-
-    #[inline(always)]
-    fn read_count(&self) -> Self::CounterValue {
-        self.cnt().read().bits()
-    }
-
-    #[inline(always)]
-    fn configure_interrupt(&mut self, interrupt: Self::Interrupt, enable: impl Into<Toggle>) {
-        let enable: Toggle = enable.into();
-        let enable: bool = enable.into();
-        match interrupt {
-            Interrupt::CompareMatch => self.intctrl().modify(|_, w| w.cmp().bit(enable)),
-            Interrupt::Overflow => self.intctrl().modify(|_, w| w.ovf().bit(enable)),
-        }
-    }
-
-    #[inline(always)]
-    fn is_interrupt_configured(&self, interrupt: Self::Interrupt) -> bool {
-        let intctrl = self.intctrl().read();
-        match interrupt {
-            Interrupt::CompareMatch => intctrl.cmp().bit(),
-            Interrupt::Overflow => intctrl.ovf().bit(),
-        }
-    }
-
-    #[inline(always)]
-    fn is_event_triggered(&self, event: Self::Event) -> bool {
-        let intflags = self.intflags().read();
-        match event {
-            Event::CompareMatch => intflags.cmp().bit(),
-            Event::Overflow => intflags.ovf().bit(),
-        }
-    }
-
-    #[inline(always)]
-    fn clear_event(&mut self, event: Self::Event) {
-        match event {
-            Event::CompareMatch => self.intflags().modify(|_, w| w.cmp().set_bit()),
-            Event::Overflow => self.intflags().modify(|_, w| w.ovf().set_bit()),
-        }
-    }
-}
-
-impl PeriodicMode for RTC {
-    #[inline(always)]
-    fn set_periodic_mode(&mut self) {}
-
-    #[inline(always)]
-    fn read_period() -> Self::CounterValue {
-        // FIXME: function needs to be called from PwmChannel where we don't
-        //        have a reference to the Timer, hence this stuff
-        //        When the split pwm channels get a ref to the timer, we can
-        //        get rid of this again
-        let rtc = unsafe { &*RTC::ptr() };
-        rtc.per().read().bits()
-    }
-
-    #[inline(always)]
-    fn trigger_update(&mut self) {
-        // no double buffering, no updating...
-    }
-
-    #[inline(always)]
-    unsafe fn set_period_unchecked(&mut self, period: Self::CounterValue) {
-        while self.status().read().perbusy().bit_is_set() {}
-        self.per().write(|w| w.bits(period));
-    }
-
-    #[inline(always)]
-    fn max_period() -> Self::CounterValue {
-        u16::MAX
-    }
-
-    #[inline(always)]
-    fn clear_overflow(&mut self) {
-        self.intflags().modify(|_, w| w.ovf().set_bit());
-    }
-
-    #[inline(always)]
-    fn get_overflow(&self) -> bool {
-        self.intflags().read().ovf().bit_is_set()
     }
 }
 
@@ -234,9 +120,6 @@ impl Pit {
 }
 
 pub struct Pit(RTC);
-
-// FIXME: implement compare mode for RTC
-// FIXME: implement PIT in RTC
 
 fn into_prescaler(prescaler: u16) -> ctrla::PRESCALER_A {
     use ctrla::PRESCALER_A::*;

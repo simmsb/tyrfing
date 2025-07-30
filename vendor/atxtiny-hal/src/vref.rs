@@ -91,20 +91,23 @@ macro_rules! impl_reference_voltage {
 #[derive(ufmt::derive::uDebug, Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]
 pub enum ReferenceVoltage {
-    /// 0.55V
-    _0V55 = 0x00,
+    /// 1.024V
+    _1V024 = 0x00,
 
-    /// 1.1V
-    _1V10 = 0x01,
+    /// 2.048V
+    _2V048 = 0x01,
+
+    /// 4.096V
+    _4V096 = 0x02,
 
     /// 2.5V
-    _2V50 = 0x02,
+    _2V50 = 0x03,
 
-    /// 4.34V
-    _4V34 = 0x03,
+    /// VDD
+    VDD = 0x05,
 
-    /// 1.5V
-    _1V50 = 0x04,
+    /// VRef
+    VRef = 0x06,
 }
 
 impl ReferenceVoltage {
@@ -114,11 +117,12 @@ impl ReferenceVoltage {
 
     pub const fn from_bits(value: u8) -> Self {
         match value {
-            0x00 => Self::_0V55,
-            0x01 => Self::_1V10,
-            0x02 => Self::_2V50,
-            0x03 => Self::_4V34,
-            0x04 => Self::_1V50,
+            0x00 => Self::_1V024,
+            0x01 => Self::_2V048,
+            0x02 => Self::_4V096,
+            0x03 => Self::_2V50,
+            0x05 => Self::VDD,
+            0x06 => Self::VRef,
             _ => unsafe { unreachable_unchecked() },
         }
     }
@@ -130,10 +134,10 @@ impl_reference_voltage!(
     ADCReferenceVoltage,
     ADCReferenceVoltage<0>,
     ReferenceVoltage,
-    ctrla,
-    adc0refsel,
-    ctrlb,
-    adc0refen
+    adc0ref,
+    refsel,
+    adc0ref,
+    alwayson
 );
 
 impl_reference_voltage!(
@@ -142,8 +146,8 @@ impl_reference_voltage!(
     DACReferenceVoltage,
     DACReferenceVoltage<0>,
     ReferenceVoltage,
-    ctrla,
-    dac0refsel,
-    ctrlb,
-    dac0refen
+    dac0ref,
+    refsel,
+    dac0ref,
+    alwayson
 );

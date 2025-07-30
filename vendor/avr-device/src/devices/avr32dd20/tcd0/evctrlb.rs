@@ -121,9 +121,9 @@ pub enum CFG_A {
     #[doc = "0: Neither Filter nor Asynchronous Event is enabled"]
     NEITHER = 0,
     #[doc = "1: Input Capture Noise Cancellation Filter enabled"]
-    FILTER = 1,
+    FILTERON = 1,
     #[doc = "2: Asynchronous Event output qualification enabled"]
-    ASYNC = 2,
+    ASYNCON = 2,
 }
 impl From<CFG_A> for u8 {
     #[inline(always)]
@@ -140,8 +140,8 @@ impl CFG_R {
     pub const fn variant(&self) -> Option<CFG_A> {
         match self.bits {
             0 => Some(CFG_A::NEITHER),
-            1 => Some(CFG_A::FILTER),
-            2 => Some(CFG_A::ASYNC),
+            1 => Some(CFG_A::FILTERON),
+            2 => Some(CFG_A::ASYNCON),
             _ => None,
         }
     }
@@ -152,13 +152,13 @@ impl CFG_R {
     }
     #[doc = "Input Capture Noise Cancellation Filter enabled"]
     #[inline(always)]
-    pub fn is_filter(&self) -> bool {
-        *self == CFG_A::FILTER
+    pub fn is_filteron(&self) -> bool {
+        *self == CFG_A::FILTERON
     }
     #[doc = "Asynchronous Event output qualification enabled"]
     #[inline(always)]
-    pub fn is_async(&self) -> bool {
-        *self == CFG_A::ASYNC
+    pub fn is_asyncon(&self) -> bool {
+        *self == CFG_A::ASYNCON
     }
 }
 #[doc = "Field `CFG` writer - Event config"]
@@ -175,13 +175,13 @@ where
     }
     #[doc = "Input Capture Noise Cancellation Filter enabled"]
     #[inline(always)]
-    pub fn filter(self) -> &'a mut crate::W<REG> {
-        self.variant(CFG_A::FILTER)
+    pub fn filteron(self) -> &'a mut crate::W<REG> {
+        self.variant(CFG_A::FILTERON)
     }
     #[doc = "Asynchronous Event output qualification enabled"]
     #[inline(always)]
-    pub fn async_(self) -> &'a mut crate::W<REG> {
-        self.variant(CFG_A::ASYNC)
+    pub fn asyncon(self) -> &'a mut crate::W<REG> {
+        self.variant(CFG_A::ASYNCON)
     }
 }
 impl R {

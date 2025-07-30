@@ -37,7 +37,7 @@ impl CLKCTRLExt for CLKCTRL {
 /// to further blocks like memory, CPU, peripherals etc.
 #[derive(ufmt::derive::uDebug, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MainClkSrc {
-    Osc20M,
+    Osc4M,
     OscUlp32K,
     XOsc32K,
     ExtClk,
@@ -45,8 +45,8 @@ pub enum MainClkSrc {
 
 fn into_clksel(src: MainClkSrc) -> mclkctrla::CLKSEL_A {
     match src {
-        MainClkSrc::Osc20M => mclkctrla::CLKSEL_A::OSC20M,
-        MainClkSrc::OscUlp32K => mclkctrla::CLKSEL_A::OSCULP32K,
+        MainClkSrc::Osc4M => mclkctrla::CLKSEL_A::OSCHF,
+        MainClkSrc::OscUlp32K => mclkctrla::CLKSEL_A::OSC32K,
         MainClkSrc::XOsc32K => mclkctrla::CLKSEL_A::XOSC32K,
         MainClkSrc::ExtClk => mclkctrla::CLKSEL_A::EXTCLK,
     }
@@ -83,8 +83,8 @@ pub struct ClkCtrl {
 impl Default for ClkCtrl {
     fn default() -> Self {
         Self {
-            main_osc:  Hertz::from_raw(20_000_000).raw(),
-            main_clk_src: MainClkSrc::Osc20M,
+            main_osc:  Hertz::from_raw(4_000_000).raw(),
+            main_clk_src: MainClkSrc::Osc4M,
             enable_clkout: false,
             per_clk: None,
         }
@@ -150,7 +150,7 @@ impl ClkCtrl {
     /// 
     /// The returned [`Clocks`] struct contains the resulting clock frequencies.
     pub fn freeze(self) -> Clocks {
-        assert!(self.main_osc <= 20_000_000);
+        assert!(self.main_osc <= 4_000_000);
 
         let clkctrl = unsafe { &*CLKCTRL::ptr() };
         let clksel = into_clksel(self.main_clk_src);
@@ -158,8 +158,8 @@ impl ClkCtrl {
         // Wait for the selected clock to stabilize
         match clksel {
            mclkctrla::CLKSEL_A::EXTCLK => while clkctrl.mclkstatus().read().exts().bit_is_clear() {},
-           mclkctrla::CLKSEL_A::OSC20M => while clkctrl.mclkstatus().read().osc20ms().bit_is_clear() {},
-           mclkctrla::CLKSEL_A::OSCULP32K => while clkctrl.mclkstatus().read().osc32ks().bit_is_clear() {},
+           mclkctrla::CLKSEL_A::OSCHF => while clkctrl.mclkstatus().read().oschfs().bit_is_clear() {},
+           mclkctrla::CLKSEL_A::OSC32K => while clkctrl.mclkstatus().read().osc32ks().bit_is_clear() {},
            mclkctrla::CLKSEL_A::XOSC32K => while clkctrl.mclkstatus().read().xosc32ks().bit_is_clear() {},
         };
 
@@ -171,7 +171,7 @@ impl ClkCtrl {
 
         // Set per_clk divider
         let desired_per_clk = self.per_clk.unwrap_or(self.main_osc);
-        assert!(desired_per_clk <= 20_000_000);
+        assert!(desired_per_clk <= 4_000_000);
         let divider = self.main_osc / desired_per_clk;
 
         if divider > 1 {

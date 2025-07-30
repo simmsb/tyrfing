@@ -18,28 +18,41 @@ pub enum Channel {
     C1 = 0,
     C2 = 1,
     C3 = 2,
+    C4 = 3,
+    C5 = 4,
+    C6 = 5,
 }
 
 pub struct Ch<const C: u8>;
 pub const C1: u8 = 0;
 pub const C2: u8 = 1;
 pub const C3: u8 = 2;
+pub const C4: u8 = 3;
+pub const C5: u8 = 4;
+pub const C6: u8 = 5;
 
 pub trait Pins<TIM, P> {
     const C1: bool = false;
     const C2: bool = false;
     const C3: bool = false;
+    const C4: bool = false;
+    const C5: bool = false;
+    const C6: bool = false;
     type Channels;
 
     fn check_used(c: Channel) -> Channel {
-        if (c == Channel::C1 && Self::C1)
-            || (c == Channel::C2 && Self::C2)
-            || (c == Channel::C3 && Self::C3)
-        {
-            c
-        } else {
-            panic!("Unused channel")
-        }
+        return c;
+        // if (c == Channel::C1 && Self::C1)
+        //     || (c == Channel::C2 && Self::C2)
+        //     || (c == Channel::C3 && Self::C3)
+        //     || (c == Channel::C4 && Self::C4)
+        //     || (c == Channel::C5 && Self::C5)
+        //     || (c == Channel::C6 && Self::C6)
+        // {
+        //     c
+        // } else {
+        //     panic!("Unused channel")
+        // }
     }
 
     fn split() -> Self::Channels;
@@ -71,13 +84,13 @@ macro_rules! pins_impl {
 }
 
 pins_impl!(
-    (P1, P2, P3), (C1, C2, C3);
-    (P2, P3), (C2, C3);
-    (P1, P3), (C1, C3);
-    (P1, P2), (C1, C2);
-    (P3), (C3);
-    (P2), (C2);
-    (P1), (C1);
+    (P1, P2, P3), (C2, C3, C4);
+    // (P2, P3), (C2, C3);
+    // (P1, P3), (C1, C3);
+    // (P1, P2), (C1, C2);
+    // (P3), (C3);
+    // (P2), (C2);
+    // (P1), (C1);
 );
 
 macro_rules! tuples {
@@ -108,13 +121,12 @@ where
         self,
         pins: PINS,
         time: TimerDurationU32<FREQ>,
-        mode: Self::GenerationMode,
         clk: TIM::ClockSource,
     ) -> Result<Pwm<Self, P, PINS, FREQ>, Error>
     where
         PINS: Pins<Self, P>;
 
-    fn pwm_hz<P, PINS>(self, pins: PINS, freq: Hertz, mode: TIM::GenerationMode, clk: TIM::ClockSource,) -> Result<PwmHz<Self, P, PINS>, Error>
+    fn pwm_hz<P, PINS>(self, pins: PINS, freq: Hertz, clk: TIM::ClockSource,) -> Result<PwmHz<Self, P, PINS>, Error>
     where
         PINS: Pins<Self, P>;
 }
@@ -127,26 +139,24 @@ where
         self,
         pins: PINS,
         time: TimerDurationU32<FREQ>,
-        mode: Self::GenerationMode,
         clk: TIM::ClockSource,
     ) -> Result<Pwm<TIM, P, PINS, FREQ>, Error>
     where
         PINS: Pins<Self, P>,
     {
-        FTimer::<Self, FREQ>::new(self, clk)?.pwm(pins, time, mode)
+        FTimer::<Self, FREQ>::new(self, clk)?.pwm(pins, time)
     }
 
     fn pwm_hz<P, PINS>(
         self,
         pins: PINS,
         time: Hertz,
-        mode: TIM::GenerationMode,
         clk: TIM::ClockSource,
     ) -> Result<PwmHz<TIM, P, PINS>, Error>
     where
         PINS: Pins<Self, P>,
     {
-        Timer::new(self, clk).pwm_hz(pins, time, mode)
+        Timer::new(self, clk).pwm_hz(pins, time)
     }
 }
 
@@ -182,7 +192,8 @@ impl<TIM: Instance + WithPwm, const C: u8> PwmChannel<TIM, C> {
 
     #[inline]
     pub fn get_max_duty(&self) -> u32 {
-        TIM::read_period().into() + 1
+        let (a, b) = TIM::read_period();
+        a.into().max(b.into()) + 1
     }
 }
 
@@ -260,7 +271,7 @@ where
     pub fn get_period(&self) -> Hertz {
         let clk = self.clk;
         let psc = self.tim.read_prescaler() as u32;
-        let per = TIM::read_period().into() + 1;
+        let per = self.get_max_duty();
 
         TIM::get_input_clock_rate(clk) / (psc * (per + 1))
     }
@@ -275,7 +286,8 @@ where
     }
 
     pub fn get_max_duty(&self) -> u32 {
-        TIM::read_period().into() + 1
+        let (a, b) = TIM::read_period();
+        a.into().max(b.into()) + 1
     }
 
     #[inline]
@@ -379,7 +391,7 @@ where
     }
 
     pub fn get_period(&self) -> TimerDurationU32<FREQ> {
-        TimerDurationU32::from_ticks(TIM::read_period().into() + 1)
+        TimerDurationU32::from_ticks(self.get_max_duty())
     }
 
     pub fn set_period(&mut self, period: TimerDurationU32<FREQ>) -> Result<(), Error> {
@@ -390,7 +402,8 @@ where
     }
 
     pub fn get_max_duty(&self) -> u32 {
-        TIM::read_period().into() + 1
+        let (a, b) = TIM::read_period();
+        a.into().max(b.into()) + 1
     }
 
     #[inline]
@@ -414,14 +427,12 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
         mut self,
         _pins: PINS,
         freq: Hertz,
-        mode: TIM::GenerationMode,
-    ) -> Result<PwmHz<TIM, P, PINS>, Error>
+        ) -> Result<PwmHz<TIM, P, PINS>, Error>
     where
         PINS: Pins<TIM, P>,
     {
         self.tim.disable_counter();
         self.tim.reset_count();
-        self.tim.set_pwm_mode(mode);
         self.tim.clear_overflow();
 
         let (period, prescaler) = self.tim.calculate_period_and_prescaler::<TIM>(self.clk, freq)?;
@@ -444,14 +455,12 @@ impl<TIM: Instance + WithPwm> Timer<TIM> {
         _pins: PINS,
         prescaler: u16,
         period: TIM::CounterValue,
-        mode: TIM::GenerationMode,
-    ) -> Result<PwmHz<TIM, P, PINS>, Error>
+        ) -> Result<PwmHz<TIM, P, PINS>, Error>
     where
         PINS: Pins<TIM, P>,
     {
         self.tim.disable_counter();
         self.tim.reset_count();
-        self.tim.set_pwm_mode(mode);
         self.tim.clear_overflow();
 
         let prescaler = TIM::get_valid_prescalers(self.clk).iter()
@@ -475,8 +484,7 @@ impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
         mut self,
         _pins: PINS,
         time: TimerDurationU32<FREQ>,
-        mode: TIM::GenerationMode,
-    ) -> Result<Pwm<TIM, P, PINS, FREQ>, Error>
+        ) -> Result<Pwm<TIM, P, PINS, FREQ>, Error>
     where
         PINS: Pins<TIM, P>,
     {
@@ -485,7 +493,6 @@ impl<TIM: Instance + WithPwm, const FREQ: u32> FTimer<TIM, FREQ> {
 
         self.tim.disable_counter();
         self.tim.reset_count();
-        self.tim.set_pwm_mode(mode);
         self.tim.clear_overflow();
 
         let period = (time.ticks() - 1).try_into().map_err(|_| Error::ImpossiblePeriod)?;

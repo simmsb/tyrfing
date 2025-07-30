@@ -61,14 +61,14 @@
 
           avrlibc = pkgs.pkgsCross.avr.libcCross;
           dfp = pkgs.fetchzip {
-            url = "http://packs.download.atmel.com/Atmel.ATtiny_DFP.2.0.368.atpack";
+            url = "http://packs.download.atmel.com/Atmel.AVR-Dx_DFP.2.7.321.atpack";
             stripRoot = false;
             extension = "zip";
-            sha256 = "sha256-T+HZFUZ8QrCFybIkbUGfoITNgJ5vUcb+t4SlvPstPOE=";
+            sha256 = "sha256-1rE98PQQR/OJ6jWJDCcnCrlDak+fpdMEeY2BBF8xK2g=";
           };
           avr_incflags = [
             "-isystem ${avrlibc}/avr/include"
-            "-isystem ${dfp}/include/avr/iotn1616.h"
+            "-isystem ${dfp}/include/avr/ioavr32dd20.h"
             "-B${avrlibc}/avr/lib/avr5"
             "-L${avrlibc}/avr/lib/avr5"
             "-B${avrlibc}/avr/lib/avr35"
@@ -76,7 +76,7 @@
             "-B${avrlibc}/avr/lib/avr51"
             "-L${avrlibc}/avr/lib/avr51"
             "-L${avrlibc}/avr/lib/avrxmega3"
-            "-L${dfp}/gcc/dev/attiny1616/avrxmega3/"
+            "-L${dfp}/gcc/dev/avr32dd20/avrxmega3/"
           ];
           avrgcc-wrapper = pkgs.stdenv.mkDerivation rec {
             name = "avrgcc-wrapper-${version}";
@@ -85,7 +85,7 @@
             buildCommand = ''
             mkdir -p $out/bin
             for exe in gcc g++; do
-            makeWrapper "${pkgs.pkgsCross.avr.buildPackages.gcc-unwrapped}/bin/avr-$exe" "$out/bin/avr-$exe" --add-flags "-B${avrlibc}/avr/lib -isystem ${avrlibc}/avr/include -isystem ${dfp}/include/avr -B${dfp}/gcc/dev/attiny1616/avrxmega3 -L${dfp}/gcc/dev/attiny1616/avrxmega3"
+            makeWrapper "${pkgs.pkgsCross.avr.buildPackages.gcc-unwrapped}/bin/avr-$exe" "$out/bin/avr-$exe" --add-flags "-B${avrlibc}/avr/lib -isystem ${avrlibc}/avr/include -isystem ${dfp}/include/avr -B${dfp}/gcc/dev/avr32dd20/avrxmega3 -L${dfp}/gcc/dev/avr32dd20/avrxmega3"
             done
             ln -s ${pkgs.pkgsCross.avr.buildPackages.gcc-unwrapped}/lib $out
             '';

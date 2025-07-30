@@ -7,10 +7,8 @@ edition = "2021"
 
 [features]
 default = ["space_saving", "default_modes"]
-logging = ["dep:ufmt"]
 space_saving = ["time_u32"]
 time_u32 = []
-has_fet = []
 
 default_modes = ["mode_fade", "mode_croak"]
 

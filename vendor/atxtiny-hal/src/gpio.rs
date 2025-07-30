@@ -24,8 +24,11 @@ macro_rules! gpio_dispatch {
         // so do a cheeky cast
         match $self.port_index() {
             0 => &*crate::pac::PORTA::ptr(),
-            1 => &*(crate::pac::PORTB::ptr() as *const crate::pac::porta::RegisterBlock),
+            // 1 => &*(crate::pac::PORTB::ptr() as *const crate::pac::porta::RegisterBlock),
             2 => &*(crate::pac::PORTC::ptr() as *const crate::pac::porta::RegisterBlock),
+            3 => &*(crate::pac::PORTD::ptr() as *const crate::pac::porta::RegisterBlock),
+            // 4 => &*(crate::pac::PORTE::ptr() as *const crate::pac::porta::RegisterBlock),
+            5 => &*(crate::pac::PORTF::ptr() as *const crate::pac::porta::RegisterBlock),
             _ => {
                 #[allow(unused_unsafe)]
                 unsafe { unreachable_unchecked() }
@@ -170,8 +173,6 @@ pub struct Analog;
 /// sets of Pins the [`IntoMuxedPinset`] trait is implemented
 /// to switch between sets of pins that are routed to different
 /// peripherals
-///
-/// [`IntoMuxedPinset`]: crate::portmux::IntoMuxedPinset
 pub struct Peripheral<PER> {
     _peripheral: PhantomData<PER>,
 }
@@ -350,8 +351,6 @@ where
     /// switches the pin into an input mode, disables the pull-ups and also
     /// disables the digital input buffer. However, pull-ups can be enabled
     /// afterwards in contrast to the analog mode.
-    ///
-    /// [`IntoMuxedPinset`]: crate::portmux::IntoMuxedPinset
     pub fn into_peripheral<PER>(self) -> Pin<Gpio, Index, Peripheral<PER>> {
         unsafe { gpio_dispatch!(self.disable_input_buffer(self.index.index())) }
         unsafe { gpio_dispatch!(self.input(self.index.index())) }
@@ -706,138 +705,24 @@ macro_rules! gpio {
 }
 
 gpio!({
-    pacs: [porta, portb, portc],
+    pacs: [porta, portc, portd, portf],
     ports: [
         {
             port: (A/a, 0, porta),
             pins: [ 0, 1, 2, 3, 4, 5, 6, 7 ],
         },
         {
-            port: (B/b, 1, portb),
-            pins: [ 0, 1, 2, 3, 4, 5, 6, 7 ],
+            port: (C/c, 2, portc),
+            pins: [ 1, 2, 3 ],
         },
         {
-            port: (C/c, 2, portc),
-            pins: [ 0, 1, 2, 3, 4, 5 ],
+            port: (D/d, 3, portd),
+            pins: [ 4, 5, 6, 7 ],
+        },
+        {
+            port: (F/f, 5, portf),
+            pins: [ 6, 7 ],
         },
     ],
 });
 
-use crate::evsys::{Channel, ChannelConfigurator, EventGenerator, GeneratorAssigned, Unconfigured};
-
-// Generator for PortA
-// only routable to ASYNCCH0
-impl<Evsys, Index, const X: u8> EventGenerator<Evsys, crate::evsys::Async, Index>
-    for Pin<Porta, U<X>, Input>
-where
-    Evsys: crate::evsys::marker::Evsys,
-    Index: crate::evsys::marker::Index<X = 0>,
-{
-    type EventSource = ();
-
-    fn connect_event_generator(
-        &mut self,
-        mut channel: Channel<Evsys, crate::evsys::Async, Index, Unconfigured>,
-        _source: Self::EventSource,
-    ) -> Channel<Evsys, crate::evsys::Async, Index, GeneratorAssigned> {
-        channel.set_generator(0x0A + X);
-        channel.into_state()
-    }
-}
-
-// only routable to SYNCCH0
-impl<Evsys, Index, const X: u8> EventGenerator<Evsys, crate::evsys::Sync, Index>
-    for Pin<Porta, U<X>, Input>
-where
-    Evsys: crate::evsys::marker::Evsys,
-    Index: crate::evsys::marker::Index<X = 0>,
-{
-    type EventSource = ();
-
-    fn connect_event_generator(
-        &mut self,
-        mut channel: Channel<Evsys, crate::evsys::Sync, Index, Unconfigured>,
-        _source: Self::EventSource,
-    ) -> Channel<Evsys, crate::evsys::Sync, Index, GeneratorAssigned> {
-        channel.set_generator(0x0D + X);
-        channel.into_state()
-    }
-}
-
-// Generator for PortB
-// only routable to ASYNCCH1
-impl<Evsys, Index, const X: u8> EventGenerator<Evsys, crate::evsys::Async, Index>
-    for Pin<Portb, U<X>, Input>
-where
-    Evsys: crate::evsys::marker::Evsys,
-    Index: crate::evsys::marker::Index<X = 1>,
-{
-    type EventSource = ();
-
-    fn connect_event_generator(
-        &mut self,
-        mut channel: Channel<Evsys, crate::evsys::Async, Index, Unconfigured>,
-        _source: Self::EventSource,
-    ) -> Channel<Evsys, crate::evsys::Async, Index, GeneratorAssigned> {
-        channel.set_generator(0x0A + X);
-        channel.into_state()
-    }
-}
-
-// only routable to SYNCCH1
-impl<Evsys, Index, const X: u8> EventGenerator<Evsys, crate::evsys::Sync, Index>
-    for Pin<Portb, U<X>, Input>
-where
-    Evsys: crate::evsys::marker::Evsys,
-    Index: crate::evsys::marker::Index<X = 1>,
-{
-    type EventSource = ();
-
-    fn connect_event_generator(
-        &mut self,
-        mut channel: Channel<Evsys, crate::evsys::Sync, Index, Unconfigured>,
-        _source: Self::EventSource,
-    ) -> Channel<Evsys, crate::evsys::Sync, Index, GeneratorAssigned> {
-        channel.set_generator(0x08 + X);
-        channel.into_state()
-    }
-}
-
-// Generator for PortC
-// only routable to ASYNCCH2
-impl<Evsys, Index, const X: u8> EventGenerator<Evsys, crate::evsys::Async, Index>
-    for Pin<Portc, U<X>, Input>
-where
-    Evsys: crate::evsys::marker::Evsys,
-    Index: crate::evsys::marker::Index<X = 2>,
-{
-    type EventSource = ();
-
-    fn connect_event_generator(
-        &mut self,
-        mut channel: Channel<Evsys, crate::evsys::Async, Index, Unconfigured>,
-        _source: Self::EventSource,
-    ) -> Channel<Evsys, crate::evsys::Async, Index, GeneratorAssigned> {
-        channel.set_generator(0x0A + X);
-        channel.into_state()
-    }
-}
-
-// only routable to SYNCCH0
-impl<Evsys, Index, const X: u8> EventGenerator<Evsys, crate::evsys::Sync, Index>
-    for Pin<Portc, U<X>, Input>
-where
-    Evsys: crate::evsys::marker::Evsys,
-    Index: crate::evsys::marker::Index<X = 0>,
-{
-    type EventSource = ();
-
-    fn connect_event_generator(
-        &mut self,
-        mut channel: Channel<Evsys, crate::evsys::Sync, Index, Unconfigured>,
-        _source: Self::EventSource,
-    ) -> Channel<Evsys, crate::evsys::Sync, Index, GeneratorAssigned> {
-        channel.set_generator(0x07 + X);
-        channel.into_state()
-    }
-}

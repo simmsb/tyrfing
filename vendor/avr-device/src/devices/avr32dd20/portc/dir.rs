@@ -3,17 +3,66 @@ pub type R = crate::R<DIR_SPEC>;
 #[doc = "Register `DIR` writer"]
 pub type W = crate::W<DIR_SPEC>;
 #[doc = "Field `PC1` reader - Pin C1"]
-pub type PC1_R = crate::BitReader;
+pub type PC1_R = crate::BitReader<PC1_A>;
+#[doc = "Pin C1\n\nValue on reset: 0"]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PC1_A {
+    #[doc = "0: Input"]
+    INPUT = 0,
+    #[doc = "1: Output"]
+    OUTPUT = 1,
+}
+impl From<PC1_A> for bool {
+    #[inline(always)]
+    fn from(variant: PC1_A) -> Self {
+        variant as u8 != 0
+    }
+}
+impl PC1_R {
+    #[doc = "Get enumerated values variant"]
+    #[inline(always)]
+    pub const fn variant(&self) -> PC1_A {
+        match self.bits {
+            false => PC1_A::INPUT,
+            true => PC1_A::OUTPUT,
+        }
+    }
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn is_input(&self) -> bool {
+        *self == PC1_A::INPUT
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn is_output(&self) -> bool {
+        *self == PC1_A::OUTPUT
+    }
+}
 #[doc = "Field `PC1` writer - Pin C1"]
-pub type PC1_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub type PC1_W<'a, REG> = crate::BitWriter<'a, REG, PC1_A>;
+impl<'a, REG> PC1_W<'a, REG>
+where
+    REG: crate::Writable + crate::RegisterSpec,
+{
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn input(self) -> &'a mut crate::W<REG> {
+        self.variant(PC1_A::INPUT)
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn output(self) -> &'a mut crate::W<REG> {
+        self.variant(PC1_A::OUTPUT)
+    }
+}
 #[doc = "Field `PC2` reader - Pin C2"]
-pub type PC2_R = crate::BitReader;
-#[doc = "Field `PC2` writer - Pin C2"]
-pub type PC2_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PC1_R as PC2_R;
 #[doc = "Field `PC3` reader - Pin C3"]
-pub type PC3_R = crate::BitReader;
+pub use PC1_R as PC3_R;
+#[doc = "Field `PC2` writer - Pin C2"]
+pub use PC1_W as PC2_W;
 #[doc = "Field `PC3` writer - Pin C3"]
-pub type PC3_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PC1_W as PC3_W;
 impl R {
     #[doc = "Bit 1 - Pin C1"]
     #[inline(always)]

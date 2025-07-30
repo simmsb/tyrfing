@@ -15,7 +15,7 @@ pub enum SMODE_A {
     #[doc = "0: Idle mode"]
     IDLE = 0,
     #[doc = "1: Standby Mode"]
-    STDBY = 1,
+    STANDBY = 1,
     #[doc = "2: Power-down Mode"]
     PDOWN = 2,
 }
@@ -34,7 +34,7 @@ impl SMODE_R {
     pub const fn variant(&self) -> Option<SMODE_A> {
         match self.bits {
             0 => Some(SMODE_A::IDLE),
-            1 => Some(SMODE_A::STDBY),
+            1 => Some(SMODE_A::STANDBY),
             2 => Some(SMODE_A::PDOWN),
             _ => None,
         }
@@ -46,8 +46,8 @@ impl SMODE_R {
     }
     #[doc = "Standby Mode"]
     #[inline(always)]
-    pub fn is_stdby(&self) -> bool {
-        *self == SMODE_A::STDBY
+    pub fn is_standby(&self) -> bool {
+        *self == SMODE_A::STANDBY
     }
     #[doc = "Power-down Mode"]
     #[inline(always)]
@@ -69,8 +69,8 @@ where
     }
     #[doc = "Standby Mode"]
     #[inline(always)]
-    pub fn stdby(self) -> &'a mut crate::W<REG> {
-        self.variant(SMODE_A::STDBY)
+    pub fn standby(self) -> &'a mut crate::W<REG> {
+        self.variant(SMODE_A::STANDBY)
     }
     #[doc = "Power-down Mode"]
     #[inline(always)]

@@ -1508,7 +1508,378 @@
         <usage>registers</usage>
       </addressBlock>
       <registers>
+        <cluster><dim>4</dim><dimIncrement>0x4</dimIncrement><dimIndex>0,1,2,3</dimIndex><name>LUT%s</name><description>CCL LUT configuration cluster</description><addressOffset>0x8</addressOffset><register>
+          <name>LUTCTRLA</name>
+          <description>LUT 0 Control A</description>
+          <addressOffset>0x0</addressOffset>
+          <size>0x8</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>ENABLE</name>
+              <description>LUT Enable</description>
+              <bitRange>[0:0]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>CLKSRC</name>
+              <description>Clock Source Selection</description>
+              <bitRange>[3:1]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <useEnumeratedValues>true</useEnumeratedValues>
+              </writeConstraint>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>CLKPER</name>
+                  <description>Peripheral Clock</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>IN2</name>
+                  <description>Selection by INSEL2</description>
+                  <value>1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>OSCHF</name>
+                  <description>Internal High-Frequency Oscillator</description>
+                  <value>4</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>OSC32K</name>
+                  <description>32.768 kHz oscillator</description>
+                  <value>5</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>OSC1K</name>
+                  <description>32.768 kHz oscillator divided by 32</description>
+                  <value>6</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>FILTSEL</name>
+              <description>Filter Selection</description>
+              <bitRange>[5:4]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <useEnumeratedValues>true</useEnumeratedValues>
+              </writeConstraint>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>DISABLE</name>
+                  <description>Filter disabled</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>SYNCH</name>
+                  <description>Synchronizer enabled</description>
+                  <value>1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>FILTER</name>
+                  <description>Filter enabled</description>
+                  <value>2</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>OUTEN</name>
+              <description>Output Enable</description>
+              <bitRange>[6:6]</bitRange>
+              <access>read-write</access>
+            </field>
+            <field>
+              <name>EDGEDET</name>
+              <description>Edge Detection Enable</description>
+              <bitRange>[7:7]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <useEnumeratedValues>true</useEnumeratedValues>
+              </writeConstraint>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>DIS</name>
+                  <description>Edge detector is disabled</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EN</name>
+                  <description>Edge detector is enabled</description>
+                  <value>1</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
         <register>
+          <name>LUTCTRLB</name>
+          <description>LUT 0 Control B</description>
+          <addressOffset>0x1</addressOffset>
+          <size>0x8</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>INSEL0</name>
+              <description>LUT Input 0 Source Selection</description>
+              <bitRange>[3:0]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <useEnumeratedValues>true</useEnumeratedValues>
+              </writeConstraint>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>MASK</name>
+                  <description>Masked input</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>FEEDBACK</name>
+                  <description>Feedback input source</description>
+                  <value>1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>LINK</name>
+                  <description>Linked LUT input source</description>
+                  <value>2</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EVENTA</name>
+                  <description>Event input source A</description>
+                  <value>3</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EVENTB</name>
+                  <description>Event input source B</description>
+                  <value>4</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>IN0</name>
+                  <description>IO pin LUTn-IN0 input source</description>
+                  <value>5</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>AC0</name>
+                  <description>AC0 OUT input source</description>
+                  <value>6</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>ZCD3</name>
+                  <description>ZCD3 OUT input source</description>
+                  <value>7</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>USART0</name>
+                  <description>USART0 TXD input source</description>
+                  <value>8</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>SPI0</name>
+                  <description>SPI0 MOSI input source</description>
+                  <value>9</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCA0</name>
+                  <description>TCA0 WO0 input source</description>
+                  <value>10</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCB0</name>
+                  <description>TCB0 WO input source</description>
+                  <value>11</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCD0</name>
+                  <description>TCD0 WOA input source</description>
+                  <value>12</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>INSEL1</name>
+              <description>LUT Input 1 Source Selection</description>
+              <bitRange>[7:4]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <useEnumeratedValues>true</useEnumeratedValues>
+              </writeConstraint>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>MASK</name>
+                  <description>Masked input</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>FEEDBACK</name>
+                  <description>Feedback input source</description>
+                  <value>1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>LINK</name>
+                  <description>Linked LUT input source</description>
+                  <value>2</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EVENTA</name>
+                  <description>Event input source A</description>
+                  <value>3</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EVENTB</name>
+                  <description>Event input source B</description>
+                  <value>4</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>IN1</name>
+                  <description>IO pin LUTn-IN1 input source</description>
+                  <value>5</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>AC0</name>
+                  <description>AC0 OUT input source</description>
+                  <value>6</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>ZCD3</name>
+                  <description>ZCD3 OUT input source</description>
+                  <value>7</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>USART1</name>
+                  <description>USART1 TXD input source</description>
+                  <value>8</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>SPI0</name>
+                  <description>SPI0 MOSI input source</description>
+                  <value>9</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCA0</name>
+                  <description>TCA0 WO1 input source</description>
+                  <value>10</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCB1</name>
+                  <description>TCB1 WO input source</description>
+                  <value>11</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCD0</name>
+                  <description>TCD0 WOB input source</description>
+                  <value>12</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LUTCTRLC</name>
+          <description>LUT 0 Control C</description>
+          <addressOffset>0x2</addressOffset>
+          <size>0x8</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>INSEL2</name>
+              <description>LUT Input 2 Source Selection</description>
+              <bitRange>[3:0]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <useEnumeratedValues>true</useEnumeratedValues>
+              </writeConstraint>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>MASK</name>
+                  <description>Masked input</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>FEEDBACK</name>
+                  <description>Feedback input source</description>
+                  <value>1</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>LINK</name>
+                  <description>Linked LUT input source</description>
+                  <value>2</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EVENTA</name>
+                  <description>Event input source A</description>
+                  <value>3</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>EVENTB</name>
+                  <description>Event input source B</description>
+                  <value>4</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>IN2</name>
+                  <description>IO pin LUTn-IN2 input source</description>
+                  <value>5</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>AC0</name>
+                  <description>AC0 OUT input source</description>
+                  <value>6</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>ZCD3</name>
+                  <description>ZCD3 OUT input source</description>
+                  <value>7</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>USART1</name>
+                  <description>USART1 TXD input source</description>
+                  <value>8</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>SPI0</name>
+                  <description>SPI0 SCK input source</description>
+                  <value>9</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCA0</name>
+                  <description>TCA0 WO2 input source</description>
+                  <value>10</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCB2</name>
+                  <description>TCB2 WO input source</description>
+                  <value>11</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>TCD0</name>
+                  <description>TCD0 WOC input source</description>
+                  <value>12</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TRUTH</name>
+          <description>Truth 0</description>
+          <addressOffset>0x3</addressOffset>
+          <size>0x8</size>
+          <access>read-write</access>
+          <fields>
+            <field>
+              <name>TRUTH</name>
+              <description>Truth Table</description>
+              <bitRange>[7:0]</bitRange>
+              <access>read-write</access>
+              <writeConstraint>
+                <range>
+                  <minimum>0</minimum>
+                  <maximum>255</maximum>
+                </range>
+              </writeConstraint>
+            </field>
+          </fields>
+        </register>
+        </cluster><register>
           <name>CTRLA</name>
           <description>Control Register A</description>
           <addressOffset>0x0</addressOffset>
@@ -1684,1408 +2055,8 @@
           </fields>
         </register>
         <register>
-          <name>LUT0CTRLA</name>
-          <description>LUT 0 Control A</description>
-          <addressOffset>0x8</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ENABLE</name>
-              <description>LUT Enable</description>
-              <bitRange>[0:0]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>CLKSRC</name>
-              <description>Clock Source Selection</description>
-              <bitRange>[3:1]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>CLKPER</name>
-                  <description>Peripheral Clock</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>Selection by INSEL2</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSCHF</name>
-                  <description>Internal High-Frequency Oscillator</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC32K</name>
-                  <description>32.768 kHz oscillator</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC1K</name>
-                  <description>32.768 kHz oscillator divided by 32</description>
-                  <value>6</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>FILTSEL</name>
-              <description>Filter Selection</description>
-              <bitRange>[5:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DISABLE</name>
-                  <description>Filter disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SYNCH</name>
-                  <description>Synchronizer enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FILTER</name>
-                  <description>Filter enabled</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>OUTEN</name>
-              <description>Output Enable</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>EDGEDET</name>
-              <description>Edge Detection Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DIS</name>
-                  <description>Edge detector is disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EN</name>
-                  <description>Edge detector is enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT0CTRLB</name>
-          <description>LUT 0 Control B</description>
-          <addressOffset>0x9</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL0</name>
-              <description>LUT Input 0 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN0</name>
-                  <description>IO pin LUTn-IN0 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART0</name>
-                  <description>USART0 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO0 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB0</name>
-                  <description>TCB0 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOA input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>INSEL1</name>
-              <description>LUT Input 1 Source Selection</description>
-              <bitRange>[7:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN1</name>
-                  <description>IO pin LUTn-IN1 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO1 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB1</name>
-                  <description>TCB1 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOB input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT0CTRLC</name>
-          <description>LUT 0 Control C</description>
-          <addressOffset>0xA</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL2</name>
-              <description>LUT Input 2 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>IO pin LUTn-IN2 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 SCK input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO2 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB2</name>
-                  <description>TCB2 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOC input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT1CTRLA</name>
-          <description>LUT 1 Control A</description>
-          <addressOffset>0xC</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ENABLE</name>
-              <description>LUT Enable</description>
-              <bitRange>[0:0]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>CLKSRC</name>
-              <description>Clock Source Selection</description>
-              <bitRange>[3:1]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>CLKPER</name>
-                  <description>Peripheral Clock</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>Selection by INSEL2</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSCHF</name>
-                  <description>Internal High-Frequency Oscillator</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC32K</name>
-                  <description>32.768 kHz oscillator</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC1K</name>
-                  <description>32.768 kHz oscillator divided by 32</description>
-                  <value>6</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>FILTSEL</name>
-              <description>Filter Selection</description>
-              <bitRange>[5:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DISABLE</name>
-                  <description>Filter disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SYNCH</name>
-                  <description>Synchronizer enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FILTER</name>
-                  <description>Filter enabled</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>OUTEN</name>
-              <description>Output Enable</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>EDGEDET</name>
-              <description>Edge Detection Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DIS</name>
-                  <description>Edge detector is disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EN</name>
-                  <description>Edge detector is enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT1CTRLB</name>
-          <description>LUT 1 Control B</description>
-          <addressOffset>0xD</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL0</name>
-              <description>LUT Input 0 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN0</name>
-                  <description>IO pin LUTn-IN0 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART0</name>
-                  <description>USART0 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO0 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB0</name>
-                  <description>TCB0 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOA input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>INSEL1</name>
-              <description>LUT Input 1 Source Selection</description>
-              <bitRange>[7:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN1</name>
-                  <description>IO pin LUTn-IN1 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO1 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB1</name>
-                  <description>TCB1 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOB input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT1CTRLC</name>
-          <description>LUT 1 Control C</description>
-          <addressOffset>0xE</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL2</name>
-              <description>LUT Input 2 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>IO pin LUTn-IN2 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 SCK input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO2 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB2</name>
-                  <description>TCB2 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOC input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT2CTRLA</name>
-          <description>LUT 2 Control A</description>
-          <addressOffset>0x10</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ENABLE</name>
-              <description>LUT Enable</description>
-              <bitRange>[0:0]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>CLKSRC</name>
-              <description>Clock Source Selection</description>
-              <bitRange>[3:1]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>CLKPER</name>
-                  <description>Peripheral Clock</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>Selection by INSEL2</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSCHF</name>
-                  <description>Internal High-Frequency Oscillator</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC32K</name>
-                  <description>32.768 kHz oscillator</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC1K</name>
-                  <description>32.768 kHz oscillator divided by 32</description>
-                  <value>6</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>FILTSEL</name>
-              <description>Filter Selection</description>
-              <bitRange>[5:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DISABLE</name>
-                  <description>Filter disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SYNCH</name>
-                  <description>Synchronizer enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FILTER</name>
-                  <description>Filter enabled</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>OUTEN</name>
-              <description>Output Enable</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>EDGEDET</name>
-              <description>Edge Detection Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DIS</name>
-                  <description>Edge detector is disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EN</name>
-                  <description>Edge detector is enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT2CTRLB</name>
-          <description>LUT 2 Control B</description>
-          <addressOffset>0x11</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL0</name>
-              <description>LUT Input 0 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN0</name>
-                  <description>IO pin LUTn-IN0 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART0</name>
-                  <description>USART0 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO0 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB0</name>
-                  <description>TCB0 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOA input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>INSEL1</name>
-              <description>LUT Input 1 Source Selection</description>
-              <bitRange>[7:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN1</name>
-                  <description>IO pin LUTn-IN1 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO1 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB1</name>
-                  <description>TCB1 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOB input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT2CTRLC</name>
-          <description>LUT 2 Control C</description>
-          <addressOffset>0x12</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL2</name>
-              <description>LUT Input 2 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>IO pin LUTn-IN2 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 SCK input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO2 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB2</name>
-                  <description>TCB2 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOC input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT3CTRLA</name>
-          <description>LUT 3 Control A</description>
-          <addressOffset>0x14</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ENABLE</name>
-              <description>LUT Enable</description>
-              <bitRange>[0:0]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>CLKSRC</name>
-              <description>Clock Source Selection</description>
-              <bitRange>[3:1]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>CLKPER</name>
-                  <description>Peripheral Clock</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>Selection by INSEL2</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSCHF</name>
-                  <description>Internal High-Frequency Oscillator</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC32K</name>
-                  <description>32.768 kHz oscillator</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>OSC1K</name>
-                  <description>32.768 kHz oscillator divided by 32</description>
-                  <value>6</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>FILTSEL</name>
-              <description>Filter Selection</description>
-              <bitRange>[5:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DISABLE</name>
-                  <description>Filter disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SYNCH</name>
-                  <description>Synchronizer enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FILTER</name>
-                  <description>Filter enabled</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>OUTEN</name>
-              <description>Output Enable</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>EDGEDET</name>
-              <description>Edge Detection Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DIS</name>
-                  <description>Edge detector is disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EN</name>
-                  <description>Edge detector is enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT3CTRLB</name>
-          <description>LUT 3 Control B</description>
-          <addressOffset>0x15</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL0</name>
-              <description>LUT Input 0 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN0</name>
-                  <description>IO pin LUTn-IN0 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART0</name>
-                  <description>USART0 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO0 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB0</name>
-                  <description>TCB0 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOA input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>INSEL1</name>
-              <description>LUT Input 1 Source Selection</description>
-              <bitRange>[7:4]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN1</name>
-                  <description>IO pin LUTn-IN1 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 MOSI input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO1 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB1</name>
-                  <description>TCB1 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOB input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>LUT3CTRLC</name>
-          <description>LUT 3 Control C</description>
-          <addressOffset>0x16</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>INSEL2</name>
-              <description>LUT Input 2 Source Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>MASK</name>
-                  <description>Masked input</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FEEDBACK</name>
-                  <description>Feedback input source</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LINK</name>
-                  <description>Linked LUT input source</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTA</name>
-                  <description>Event input source A</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EVENTB</name>
-                  <description>Event input source B</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>IN2</name>
-                  <description>IO pin LUTn-IN2 input source</description>
-                  <value>5</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>AC0</name>
-                  <description>AC0 OUT input source</description>
-                  <value>6</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ZCD3</name>
-                  <description>ZCD3 OUT input source</description>
-                  <value>7</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>USART1</name>
-                  <description>USART1 TXD input source</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>SPI0</name>
-                  <description>SPI0 SCK input source</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCA0</name>
-                  <description>TCA0 WO2 input source</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCB2</name>
-                  <description>TCB2 WO input source</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>TCD0</name>
-                  <description>TCD0 WOC input source</description>
-                  <value>12</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>SEQCTRL0</name>
-          <description>Sequential Control 0</description>
+          <dim>2</dim><dimIncrement>0x1</dimIncrement><dimIndex>0,1</dimIndex><name>SEQCTRL%s</name>
+          <description>Sequential Control %s</description>
           <addressOffset>0x1</addressOffset>
           <size>0x8</size>
           <access>read-write</access>
@@ -3128,136 +2099,7 @@
             </field>
           </fields>
         </register>
-        <register>
-          <name>SEQCTRL1</name>
-          <description>Sequential Control 1</description>
-          <addressOffset>0x2</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>SEQSEL</name>
-              <description>Sequential Selection</description>
-              <bitRange>[3:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>DISABLE</name>
-                  <description>Sequential logic disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>DFF</name>
-                  <description>D FlipFlop</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>JK</name>
-                  <description>JK FlipFlop</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LATCH</name>
-                  <description>D Latch</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RS</name>
-                  <description>RS Latch</description>
-                  <value>4</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>TRUTH0</name>
-          <description>Truth 0</description>
-          <addressOffset>0xB</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>TRUTH</name>
-              <description>Truth Table</description>
-              <bitRange>[7:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <range>
-                  <minimum>0</minimum>
-                  <maximum>255</maximum>
-                </range>
-              </writeConstraint>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>TRUTH1</name>
-          <description>Truth 1</description>
-          <addressOffset>0xF</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>TRUTH</name>
-              <description>Truth Table</description>
-              <bitRange>[7:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <range>
-                  <minimum>0</minimum>
-                  <maximum>255</maximum>
-                </range>
-              </writeConstraint>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>TRUTH2</name>
-          <description>Truth 2</description>
-          <addressOffset>0x13</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>TRUTH</name>
-              <description>Truth Table</description>
-              <bitRange>[7:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <range>
-                  <minimum>0</minimum>
-                  <maximum>255</maximum>
-                </range>
-              </writeConstraint>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>TRUTH3</name>
-          <description>Truth 3</description>
-          <addressOffset>0x17</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>TRUTH</name>
-              <description>Truth Table</description>
-              <bitRange>[7:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <range>
-                  <minimum>0</minimum>
-                  <maximum>255</maximum>
-                </range>
-              </writeConstraint>
-            </field>
-          </fields>
-        </register>
-      </registers>
+        </registers>
     </peripheral>
     <peripheral>
       <name>CLKCTRL</name>
@@ -4138,18 +2980,21 @@
               <description>Round-robin Scheduling Enable</description>
               <bitRange>[0:0]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>LVL0RR</name><usage>read-write</usage><enumeratedValue><name>FIXED</name><description>Priority is fixed for priority level 0 interrupt requests: The lowest interrupt vector address has the highest priority.</description><value>0</value></enumeratedValue><enumeratedValue><name>ROUNDROBIN</name><description>The round robin priority scheme is enabled for priority level 0 interrupt requests</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>CVT</name>
               <description>Compact Vector Table</description>
               <bitRange>[5:5]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>CVT</name><usage>read-write</usage><enumeratedValue><name>NORMAL</name><description>Compact Vector Table function is disabled</description><value>0</value></enumeratedValue><enumeratedValue><name>COMPACT</name><description>Compact Vector Table function is enabled</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>IVSEL</name>
               <description>Interrupt Vector Select</description>
               <bitRange>[6:6]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>IVSEL</name><usage>read-write</usage><enumeratedValue><name>AFTERBOOT</name><description>Interrupt vectors are placed after the BOOT section of the Flash</description><value>0</value></enumeratedValue><enumeratedValue><name>INBOOT</name><description>Interrupt vectors are placed at the start of the BOOT section of the Flash</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -7919,103 +6764,7 @@
               <writeConstraint>
                 <useEnumeratedValues>true</useEnumeratedValues>
               </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>NONE</name>
-                  <description>No Command</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>NOOP</name>
-                  <description>No Operation</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLWR</name>
-                  <description>Flash Write</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLPER</name>
-                  <description>Flash Page Erase</description>
-                  <value>8</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLMPER2</name>
-                  <description>Flash Multi-Page Erase 2 pages</description>
-                  <value>9</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLMPER4</name>
-                  <description>Flash Multi-Page Erase 4 pages</description>
-                  <value>10</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLMPER8</name>
-                  <description>Flash Multi-Page Erase 8 pages</description>
-                  <value>11</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLMPER16</name>
-                  <description>Flash Multi-Page Erase 16 pages</description>
-                  <value>12</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FLMPER32</name>
-                  <description>Flash Multi-Page Erase 32 pages</description>
-                  <value>13</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEWR</name>
-                  <description>EEPROM Write</description>
-                  <value>18</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEERWR</name>
-                  <description>EEPROM Erase and Write</description>
-                  <value>19</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEBER</name>
-                  <description>EEPROM Byte Erase</description>
-                  <value>24</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEMBER2</name>
-                  <description>EEPROM Multi-Byte Erase 2 bytes</description>
-                  <value>25</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEMBER4</name>
-                  <description>EEPROM Multi-Byte Erase 4 bytes</description>
-                  <value>26</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEMBER8</name>
-                  <description>EEPROM Multi-Byte Erase 8 bytes</description>
-                  <value>27</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEMBER16</name>
-                  <description>EEPROM Multi-Byte Erase 16 bytes</description>
-                  <value>28</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EEMBER32</name>
-                  <description>EEPROM Multi-Byte Erase 32 bytes</description>
-                  <value>29</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>CHER</name>
-                  <description>Chip Erase Command</description>
-                  <value>32</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>EECHER</name>
-                  <description>EEPROM Erase Command</description>
-                  <value>48</value>
-                </enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues><name>CMD</name><usage>read-write</usage><enumeratedValue><name>NONE</name><description>No command</description><value>0</value></enumeratedValue><enumeratedValue><name>WP</name><description>Write page</description><value>1</value></enumeratedValue><enumeratedValue><name>ER</name><description>Erase page</description><value>2</value></enumeratedValue><enumeratedValue><name>ERWP</name><description>Erase and write page</description><value>3</value></enumeratedValue><enumeratedValue><name>PBC</name><description>Page buffer clear</description><value>4</value></enumeratedValue><enumeratedValue><name>CHER</name><description>Chip erase</description><value>5</value></enumeratedValue><enumeratedValue><name>EEER</name><description>EEPROM erase</description><value>6</value></enumeratedValue><enumeratedValue><name>WFU</name><description>Write fuse (PDI only)</description><value>7</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -8212,48 +6961,56 @@
               <description>Pin A0</description>
               <bitRange>[0:0]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>PA0</name><usage>read-write</usage><enumeratedValue><name>Input</name><description>Input</description><value>0</value></enumeratedValue><enumeratedValue><name>Output</name><description>Output</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PA1</name>
               <description>Pin A1</description>
               <bitRange>[1:1]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
             <field>
               <name>PA2</name>
               <description>Pin A2</description>
               <bitRange>[2:2]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
             <field>
               <name>PA3</name>
               <description>Pin A3</description>
               <bitRange>[3:3]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
             <field>
               <name>PA4</name>
               <description>Pin A4</description>
               <bitRange>[4:4]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
             <field>
               <name>PA5</name>
               <description>Pin A5</description>
               <bitRange>[5:5]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
             <field>
               <name>PA6</name>
               <description>Pin A6</description>
               <bitRange>[6:6]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
             <field>
               <name>PA7</name>
               <description>Pin A7</description>
               <bitRange>[7:7]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PA0"/>
             </field>
           </fields>
         </register>
@@ -8771,485 +7528,9 @@
           </fields>
         </register>
         <register>
-          <name>PIN0CTRL</name>
-          <description>Pin 0 Control</description>
+          <dim>8</dim><dimIncrement>0x1</dimIncrement><dimIndex>0,1,2,3,4,5,6,7</dimIndex><name>PIN%sCTRL</name>
+          <description>Pin %s Control</description>
           <addressOffset>0x10</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN1CTRL</name>
-          <description>Pin 1 Control</description>
-          <addressOffset>0x11</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN2CTRL</name>
-          <description>Pin 2 Control</description>
-          <addressOffset>0x12</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN3CTRL</name>
-          <description>Pin 3 Control</description>
-          <addressOffset>0x13</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN4CTRL</name>
-          <description>Pin 4 Control</description>
-          <addressOffset>0x14</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN5CTRL</name>
-          <description>Pin 5 Control</description>
-          <addressOffset>0x15</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN6CTRL</name>
-          <description>Pin 6 Control</description>
-          <addressOffset>0x16</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN7CTRL</name>
-          <description>Pin 7 Control</description>
-          <addressOffset>0x17</addressOffset>
           <size>0x8</size>
           <access>read-write</access>
           <fields>
@@ -9489,18 +7770,21 @@
               <description>Pin C1</description>
               <bitRange>[1:1]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>PC1</name><usage>read-write</usage><enumeratedValue><name>Input</name><description>Input</description><value>0</value></enumeratedValue><enumeratedValue><name>Output</name><description>Output</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PC2</name>
               <description>Pin C2</description>
               <bitRange>[2:2]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PC1"/>
             </field>
             <field>
               <name>PC3</name>
               <description>Pin C3</description>
               <bitRange>[3:3]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PC1"/>
             </field>
           </fields>
         </register>
@@ -9748,485 +8032,9 @@
           </fields>
         </register>
         <register>
-          <name>PIN0CTRL</name>
-          <description>Pin 0 Control</description>
+          <dim>8</dim><dimIncrement>0x1</dimIncrement><dimIndex>0,1,2,3,4,5,6,7</dimIndex><name>PIN%sCTRL</name>
+          <description>Pin %s Control</description>
           <addressOffset>0x10</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN1CTRL</name>
-          <description>Pin 1 Control</description>
-          <addressOffset>0x11</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN2CTRL</name>
-          <description>Pin 2 Control</description>
-          <addressOffset>0x12</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN3CTRL</name>
-          <description>Pin 3 Control</description>
-          <addressOffset>0x13</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN4CTRL</name>
-          <description>Pin 4 Control</description>
-          <addressOffset>0x14</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN5CTRL</name>
-          <description>Pin 5 Control</description>
-          <addressOffset>0x15</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN6CTRL</name>
-          <description>Pin 6 Control</description>
-          <addressOffset>0x16</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN7CTRL</name>
-          <description>Pin 7 Control</description>
-          <addressOffset>0x17</addressOffset>
           <size>0x8</size>
           <access>read-write</access>
           <fields>
@@ -10466,24 +8274,28 @@
               <description>Pin D4</description>
               <bitRange>[4:4]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>PD4</name><usage>read-write</usage><enumeratedValue><name>Input</name><description>Input</description><value>0</value></enumeratedValue><enumeratedValue><name>Output</name><description>Output</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PD5</name>
               <description>Pin D5</description>
               <bitRange>[5:5]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PD4"/>
             </field>
             <field>
               <name>PD6</name>
               <description>Pin D6</description>
               <bitRange>[6:6]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PD4"/>
             </field>
             <field>
               <name>PD7</name>
               <description>Pin D7</description>
               <bitRange>[7:7]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PD4"/>
             </field>
           </fields>
         </register>
@@ -10785,485 +8597,9 @@
           </fields>
         </register>
         <register>
-          <name>PIN0CTRL</name>
-          <description>Pin 0 Control</description>
+          <dim>8</dim><dimIncrement>0x1</dimIncrement><dimIndex>0,1,2,3,4,5,6,7</dimIndex><name>PIN%sCTRL</name>
+          <description>Pin %s Control</description>
           <addressOffset>0x10</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN1CTRL</name>
-          <description>Pin 1 Control</description>
-          <addressOffset>0x11</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN2CTRL</name>
-          <description>Pin 2 Control</description>
-          <addressOffset>0x12</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN3CTRL</name>
-          <description>Pin 3 Control</description>
-          <addressOffset>0x13</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN4CTRL</name>
-          <description>Pin 4 Control</description>
-          <addressOffset>0x14</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN5CTRL</name>
-          <description>Pin 5 Control</description>
-          <addressOffset>0x15</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN6CTRL</name>
-          <description>Pin 6 Control</description>
-          <addressOffset>0x16</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN7CTRL</name>
-          <description>Pin 7 Control</description>
-          <addressOffset>0x17</addressOffset>
           <size>0x8</size>
           <access>read-write</access>
           <fields>
@@ -11515,12 +8851,14 @@
               <description>Pin F6</description>
               <bitRange>[6:6]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>PF6</name><usage>read-write</usage><enumeratedValue><name>Input</name><description>Input</description><value>0</value></enumeratedValue><enumeratedValue><name>Output</name><description>Output</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
             <field>
               <name>PF7</name>
               <description>Pin F7</description>
               <bitRange>[7:7]</bitRange>
               <access>read-write</access>
+            <enumeratedValues derivedFrom="PF6"/>
             </field>
           </fields>
         </register>
@@ -11714,485 +9052,9 @@
           </fields>
         </register>
         <register>
-          <name>PIN0CTRL</name>
-          <description>Pin 0 Control</description>
+          <dim>8</dim><dimIncrement>0x1</dimIncrement><dimIndex>0,1,2,3,4,5,6,7</dimIndex><name>PIN%sCTRL</name>
+          <description>Pin %s Control</description>
           <addressOffset>0x10</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN1CTRL</name>
-          <description>Pin 1 Control</description>
-          <addressOffset>0x11</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN2CTRL</name>
-          <description>Pin 2 Control</description>
-          <addressOffset>0x12</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN3CTRL</name>
-          <description>Pin 3 Control</description>
-          <addressOffset>0x13</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN4CTRL</name>
-          <description>Pin 4 Control</description>
-          <addressOffset>0x14</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN5CTRL</name>
-          <description>Pin 5 Control</description>
-          <addressOffset>0x15</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN6CTRL</name>
-          <description>Pin 6 Control</description>
-          <addressOffset>0x16</addressOffset>
-          <size>0x8</size>
-          <access>read-write</access>
-          <fields>
-            <field>
-              <name>ISC</name>
-              <description>Input/Sense Configuration</description>
-              <bitRange>[2:0]</bitRange>
-              <access>read-write</access>
-              <writeConstraint>
-                <useEnumeratedValues>true</useEnumeratedValues>
-              </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>INTDISABLE</name>
-                  <description>Interrupt disabled but input buffer enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>BOTHEDGES</name>
-                  <description>Sense Both Edges</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>RISING</name>
-                  <description>Sense Rising Edge</description>
-                  <value>2</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FALLING</name>
-                  <description>Sense Falling Edge</description>
-                  <value>3</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>INPUT_DISABLE</name>
-                  <description>Digital Input Buffer disabled</description>
-                  <value>4</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>LEVEL</name>
-                  <description>Sense low Level</description>
-                  <value>5</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-            <field>
-              <name>PULLUPEN</name>
-              <description>Pullup enable</description>
-              <bitRange>[3:3]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INLVL</name>
-              <description>Input level select</description>
-              <bitRange>[6:6]</bitRange>
-              <access>read-write</access>
-            </field>
-            <field>
-              <name>INVEN</name>
-              <description>Inverted I/O Enable</description>
-              <bitRange>[7:7]</bitRange>
-              <access>read-write</access>
-            </field>
-          </fields>
-        </register>
-        <register>
-          <name>PIN7CTRL</name>
-          <description>Pin 7 Control</description>
-          <addressOffset>0x17</addressOffset>
           <size>0x8</size>
           <access>read-write</access>
           <fields>
@@ -13757,23 +10619,7 @@
               <writeConstraint>
                 <useEnumeratedValues>true</useEnumeratedValues>
               </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>IDLE</name>
-                  <description>Idle mode</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>STDBY</name>
-                  <description>Standby Mode</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>PDOWN</name>
-                  <description>Power-down Mode</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues><name>SMODE</name><usage>read-write</usage><enumeratedValue><name>IDLE</name><description>Idle mode</description><value>0</value></enumeratedValue><enumeratedValue><name>STANDBY</name><description>Standby Mode</description><value>1</value></enumeratedValue><enumeratedValue><name>PDOWN</name><description>Power-down Mode</description><value>2</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -13901,6 +10747,7 @@
               <description>Data Order Setting</description>
               <bitRange>[6:6]</bitRange>
               <access>read-write</access>
+            <enumeratedValues><name>DORD</name><usage>read-write</usage><enumeratedValue><name>MsbFirst</name><description>Most significant byte first</description><value>0</value></enumeratedValue><enumeratedValue><name>LsbFirst</name><description>Least significant byte first</description><value>1</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -15752,7 +12599,9 @@
             </range>
           </writeConstraint>
         </register>
-      </registers>
+      <register><name>CCMPL</name><description>Compare Capture low bit</description><addressOffset>12</addressOffset><access>read-write</access></register>
+        <register><name>CCMPH</name><description>Compare Capture high bit</description><addressOffset>13</addressOffset><access>read-write</access></register>
+        </registers>
     </peripheral>
     <peripheral>
       <name>TCB1</name>
@@ -16780,23 +13629,7 @@
               <writeConstraint>
                 <useEnumeratedValues>true</useEnumeratedValues>
               </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>NEITHER</name>
-                  <description>Neither Filter nor Asynchronous Event is enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FILTER</name>
-                  <description>Input Capture Noise Cancellation Filter enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ASYNC</name>
-                  <description>Asynchronous Event output qualification enabled</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues><name>CFG</name><usage>read-write</usage><enumeratedValue><name>NEITHER</name><description>Neither Filter nor Asynchronous Event is enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>FILTERON</name><description>Input Capture Noise Cancellation Filter enabled</description><value>1</value></enumeratedValue><enumeratedValue><name>ASYNCON</name><description>Asynchronous Event output qualification enabled</description><value>2</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>
@@ -16863,23 +13696,7 @@
               <writeConstraint>
                 <useEnumeratedValues>true</useEnumeratedValues>
               </writeConstraint>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>NEITHER</name>
-                  <description>Neither Filter nor Asynchronous Event is enabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>FILTER</name>
-                  <description>Input Capture Noise Cancellation Filter enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>ASYNC</name>
-                  <description>Asynchronous Event output qualification enabled</description>
-                  <value>2</value>
-                </enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues><name>CFG</name><usage>read-write</usage><enumeratedValue><name>NEITHER</name><description>Neither Filter nor Asynchronous Event is enabled</description><value>0</value></enumeratedValue><enumeratedValue><name>FILTERON</name><description>Input Capture Noise Cancellation Filter enabled</description><value>1</value></enumeratedValue><enumeratedValue><name>ASYNCON</name><description>Asynchronous Event output qualification enabled</description><value>2</value></enumeratedValue></enumeratedValues>
             </field>
           </fields>
         </register>

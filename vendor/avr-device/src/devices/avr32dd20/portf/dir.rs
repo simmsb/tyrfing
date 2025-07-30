@@ -3,13 +3,62 @@ pub type R = crate::R<DIR_SPEC>;
 #[doc = "Register `DIR` writer"]
 pub type W = crate::W<DIR_SPEC>;
 #[doc = "Field `PF6` reader - Pin F6"]
-pub type PF6_R = crate::BitReader;
+pub type PF6_R = crate::BitReader<PF6_A>;
+#[doc = "Pin F6\n\nValue on reset: 0"]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PF6_A {
+    #[doc = "0: Input"]
+    INPUT = 0,
+    #[doc = "1: Output"]
+    OUTPUT = 1,
+}
+impl From<PF6_A> for bool {
+    #[inline(always)]
+    fn from(variant: PF6_A) -> Self {
+        variant as u8 != 0
+    }
+}
+impl PF6_R {
+    #[doc = "Get enumerated values variant"]
+    #[inline(always)]
+    pub const fn variant(&self) -> PF6_A {
+        match self.bits {
+            false => PF6_A::INPUT,
+            true => PF6_A::OUTPUT,
+        }
+    }
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn is_input(&self) -> bool {
+        *self == PF6_A::INPUT
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn is_output(&self) -> bool {
+        *self == PF6_A::OUTPUT
+    }
+}
 #[doc = "Field `PF6` writer - Pin F6"]
-pub type PF6_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub type PF6_W<'a, REG> = crate::BitWriter<'a, REG, PF6_A>;
+impl<'a, REG> PF6_W<'a, REG>
+where
+    REG: crate::Writable + crate::RegisterSpec,
+{
+    #[doc = "Input"]
+    #[inline(always)]
+    pub fn input(self) -> &'a mut crate::W<REG> {
+        self.variant(PF6_A::INPUT)
+    }
+    #[doc = "Output"]
+    #[inline(always)]
+    pub fn output(self) -> &'a mut crate::W<REG> {
+        self.variant(PF6_A::OUTPUT)
+    }
+}
 #[doc = "Field `PF7` reader - Pin F7"]
-pub type PF7_R = crate::BitReader;
+pub use PF6_R as PF7_R;
 #[doc = "Field `PF7` writer - Pin F7"]
-pub type PF7_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub use PF6_W as PF7_W;
 impl R {
     #[doc = "Bit 6 - Pin F6"]
     #[inline(always)]

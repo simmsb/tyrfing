@@ -1,5 +1,5 @@
-use avr_device::attiny1616::slpctrl::ctrla::SMODE_A;
-use avr_device::attiny1616::SLPCTRL;
+use avr_device::avr32dd20::slpctrl::ctrla::SMODE_A;
+use avr_device::avr32dd20::SLPCTRL;
 use portable_atomic::AtomicU8;
 
 #[export_name = "__sleep"]

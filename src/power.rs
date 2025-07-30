@@ -5,10 +5,10 @@ use crate::{
 use atxtiny_hal::{
     dac::{Dac, Enabled},
     embedded_hal::digital::OutputPin,
-    gpio::{Input, Output, Pin, Porta, Portb, Stateless, U},
+    gpio::{Input, Output, Pin, Porta, Portc, Stateless, U},
     vref::{DACReferenceVoltage, ReferenceVoltage, VrefExt},
 };
-use avr_device::attiny1616::{DAC0, VREF};
+use avr_device::avr32dd20::{DAC0, VREF};
 use avr_hal_generic::prelude::*;
 
 use crate::{
@@ -54,10 +54,9 @@ pub struct PowerPaths {
     _vref: DACReferenceVoltage<0>,
     dac: Dac<DAC0, Enabled>,
     path1: Pin<Porta, U<7>, Output<Stateless>>,
-    path2: Pin<Portb, U<5>, Output<Stateless>>,
-    path3: Pin<Portb, U<4>, Output<Stateless>>,
-    buck: Pin<Portb, U<3>, Output<Stateless>>,
-    fet: Pin<Portb, U<2>, Output<Stateless>>,
+    path2: Pin<Porta, U<6>, Output<Stateless>>,
+    path3: Pin<Porta, U<5>, Output<Stateless>>,
+    buck: Pin<Portc, U<1>, Output<Stateless>>,
     wakelock: Mug,
     buck_is_on: bool,
 }
@@ -67,10 +66,9 @@ impl PowerPaths {
         vref: DACReferenceVoltage<0>,
         mut dac: Dac<DAC0, Enabled>,
         path1: atxtiny_hal::gpio::PA7<Input>,
-        path2: atxtiny_hal::gpio::PB5<Input>,
-        path3: atxtiny_hal::gpio::PB4<Input>,
-        buck: atxtiny_hal::gpio::PB3<Input>,
-        fet: atxtiny_hal::gpio::PB2<Input>,
+        path2: atxtiny_hal::gpio::PA6<Input>,
+        path3: atxtiny_hal::gpio::PA5<Input>,
+        buck: atxtiny_hal::gpio::PC1<Input>,
     ) -> Self {
         dac.run_in_standby(true);
         let mut s = Self {
@@ -80,7 +78,6 @@ impl PowerPaths {
             path2: path2.into_stateless_push_pull_output(),
             path3: path3.into_stateless_push_pull_output(),
             buck: buck.into_stateless_push_pull_output(),
-            fet: fet.into_stateless_push_pull_output(),
             wakelock: Mug::new(),
             buck_is_on: false,
         };
@@ -89,7 +86,6 @@ impl PowerPaths {
     }
 
     fn off(&mut self) {
-        self.fet.set_low().unwrap_infallible();
         self.buck.set_low().unwrap_infallible();
         self.path1.set_low().unwrap_infallible();
         self.path2.set_low().unwrap_infallible();
@@ -97,18 +93,7 @@ impl PowerPaths {
         self.buck_is_on = false;
     }
 
-    #[cfg(feature = "has_fet")]
-    fn turbo_level(&mut self) {
-        self.buck.set_low().unwrap_infallible();
-        self.fet.set_high().unwrap_infallible();
-        self.path1.set_high().unwrap_infallible();
-        self.path2.set_high().unwrap_infallible();
-        self.path3.set_high().unwrap_infallible();
-        self.buck_is_on = false;
-    }
-
     fn buck_level(&mut self) {
-        self.fet.set_low().unwrap_infallible();
         self.buck.set_high().unwrap_infallible();
         self.buck_is_on = true;
     }
@@ -134,10 +119,6 @@ impl PowerPaths {
         if level == 0 {
             self.off();
             self.wakelock.decaffeinate();
-        } else if level == 255 {
-            #[cfg(feature = "has_fet")]
-            self.turbo_level();
-            self.wakelock.caffeinate();
         } else {
             self.wakelock.caffeinate();
             let config = crate::power_levels::OUTPUT_LEVELS.load_at(level as usize);
@@ -154,8 +135,8 @@ impl PowerPaths {
     }
 }
 
-const INSTANT_STOP_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(60);
-const MAX_TEMP: Temperature<u16> = Temperature::kelvin_times_64_from_celcius(50);
+const INSTANT_STOP_TEMP: Temperature<u16> = Temperature::from_celcius(60);
+const MAX_TEMP: Temperature<u16> = Temperature::from_celcius(45);
 const MIN_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(3.0);
 const INSTANT_STOP_VOLTS: Voltage<u16> = Voltage::volts_to_adc_output(2.6);
 
@@ -204,9 +185,9 @@ pub async fn power_controller(mut paths: PowerPaths) {
             actual_level = 0;
         }
 
-        let temp = crate::sensing::TEMPERATURE.get().kelvin_times_64();
+        let temp = crate::sensing::TEMPERATURE.get();
 
-        if temp > INSTANT_STOP_TEMP.0 {
+        if temp > INSTANT_STOP_TEMP {
             actual_level = 0;
         }
 
@@ -216,7 +197,7 @@ pub async fn power_controller(mut paths: PowerPaths) {
                 accumulated_under_volts = 0;
             }
 
-            let temp_diff = (temp as i32) - (MAX_TEMP.0 as i32);
+            let temp_diff = (temp.0 as i32) - (MAX_TEMP.0 as i32);
 
             accumulated_over_temp = accumulated_over_temp.saturating_add_signed(temp_diff);
 
@@ -226,7 +207,7 @@ pub async fn power_controller(mut paths: PowerPaths) {
 
         const TICKS_PER_SEC: u32 = 100;
         let power_decrease = accumulated_under_volts
-            .saturating_add((accumulated_over_temp) / (64 * TICKS_PER_SEC * 2));
+            .saturating_add((accumulated_over_temp) / (20 * TICKS_PER_SEC * 2));
 
         // decrease level by 1 for every two seconds of 1c over temp
 

@@ -8,44 +8,22 @@ pub type CMD_R = crate::FieldReader<CMD_A>;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum CMD_A {
-    #[doc = "0: No Command"]
+    #[doc = "0: No command"]
     NONE = 0,
-    #[doc = "1: No Operation"]
-    NOOP = 1,
-    #[doc = "2: Flash Write"]
-    FLWR = 2,
-    #[doc = "8: Flash Page Erase"]
-    FLPER = 8,
-    #[doc = "9: Flash Multi-Page Erase 2 pages"]
-    FLMPER2 = 9,
-    #[doc = "10: Flash Multi-Page Erase 4 pages"]
-    FLMPER4 = 10,
-    #[doc = "11: Flash Multi-Page Erase 8 pages"]
-    FLMPER8 = 11,
-    #[doc = "12: Flash Multi-Page Erase 16 pages"]
-    FLMPER16 = 12,
-    #[doc = "13: Flash Multi-Page Erase 32 pages"]
-    FLMPER32 = 13,
-    #[doc = "18: EEPROM Write"]
-    EEWR = 18,
-    #[doc = "19: EEPROM Erase and Write"]
-    EEERWR = 19,
-    #[doc = "24: EEPROM Byte Erase"]
-    EEBER = 24,
-    #[doc = "25: EEPROM Multi-Byte Erase 2 bytes"]
-    EEMBER2 = 25,
-    #[doc = "26: EEPROM Multi-Byte Erase 4 bytes"]
-    EEMBER4 = 26,
-    #[doc = "27: EEPROM Multi-Byte Erase 8 bytes"]
-    EEMBER8 = 27,
-    #[doc = "28: EEPROM Multi-Byte Erase 16 bytes"]
-    EEMBER16 = 28,
-    #[doc = "29: EEPROM Multi-Byte Erase 32 bytes"]
-    EEMBER32 = 29,
-    #[doc = "32: Chip Erase Command"]
-    CHER = 32,
-    #[doc = "48: EEPROM Erase Command"]
-    EECHER = 48,
+    #[doc = "1: Write page"]
+    WP = 1,
+    #[doc = "2: Erase page"]
+    ER = 2,
+    #[doc = "3: Erase and write page"]
+    ERWP = 3,
+    #[doc = "4: Page buffer clear"]
+    PBC = 4,
+    #[doc = "5: Chip erase"]
+    CHER = 5,
+    #[doc = "6: EEPROM erase"]
+    EEER = 6,
+    #[doc = "7: Write fuse (PDI only)"]
+    WFU = 7,
 }
 impl From<CMD_A> for u8 {
     #[inline(always)]
@@ -62,121 +40,55 @@ impl CMD_R {
     pub const fn variant(&self) -> Option<CMD_A> {
         match self.bits {
             0 => Some(CMD_A::NONE),
-            1 => Some(CMD_A::NOOP),
-            2 => Some(CMD_A::FLWR),
-            8 => Some(CMD_A::FLPER),
-            9 => Some(CMD_A::FLMPER2),
-            10 => Some(CMD_A::FLMPER4),
-            11 => Some(CMD_A::FLMPER8),
-            12 => Some(CMD_A::FLMPER16),
-            13 => Some(CMD_A::FLMPER32),
-            18 => Some(CMD_A::EEWR),
-            19 => Some(CMD_A::EEERWR),
-            24 => Some(CMD_A::EEBER),
-            25 => Some(CMD_A::EEMBER2),
-            26 => Some(CMD_A::EEMBER4),
-            27 => Some(CMD_A::EEMBER8),
-            28 => Some(CMD_A::EEMBER16),
-            29 => Some(CMD_A::EEMBER32),
-            32 => Some(CMD_A::CHER),
-            48 => Some(CMD_A::EECHER),
+            1 => Some(CMD_A::WP),
+            2 => Some(CMD_A::ER),
+            3 => Some(CMD_A::ERWP),
+            4 => Some(CMD_A::PBC),
+            5 => Some(CMD_A::CHER),
+            6 => Some(CMD_A::EEER),
+            7 => Some(CMD_A::WFU),
             _ => None,
         }
     }
-    #[doc = "No Command"]
+    #[doc = "No command"]
     #[inline(always)]
     pub fn is_none(&self) -> bool {
         *self == CMD_A::NONE
     }
-    #[doc = "No Operation"]
+    #[doc = "Write page"]
     #[inline(always)]
-    pub fn is_noop(&self) -> bool {
-        *self == CMD_A::NOOP
+    pub fn is_wp(&self) -> bool {
+        *self == CMD_A::WP
     }
-    #[doc = "Flash Write"]
+    #[doc = "Erase page"]
     #[inline(always)]
-    pub fn is_flwr(&self) -> bool {
-        *self == CMD_A::FLWR
+    pub fn is_er(&self) -> bool {
+        *self == CMD_A::ER
     }
-    #[doc = "Flash Page Erase"]
+    #[doc = "Erase and write page"]
     #[inline(always)]
-    pub fn is_flper(&self) -> bool {
-        *self == CMD_A::FLPER
+    pub fn is_erwp(&self) -> bool {
+        *self == CMD_A::ERWP
     }
-    #[doc = "Flash Multi-Page Erase 2 pages"]
+    #[doc = "Page buffer clear"]
     #[inline(always)]
-    pub fn is_flmper2(&self) -> bool {
-        *self == CMD_A::FLMPER2
+    pub fn is_pbc(&self) -> bool {
+        *self == CMD_A::PBC
     }
-    #[doc = "Flash Multi-Page Erase 4 pages"]
-    #[inline(always)]
-    pub fn is_flmper4(&self) -> bool {
-        *self == CMD_A::FLMPER4
-    }
-    #[doc = "Flash Multi-Page Erase 8 pages"]
-    #[inline(always)]
-    pub fn is_flmper8(&self) -> bool {
-        *self == CMD_A::FLMPER8
-    }
-    #[doc = "Flash Multi-Page Erase 16 pages"]
-    #[inline(always)]
-    pub fn is_flmper16(&self) -> bool {
-        *self == CMD_A::FLMPER16
-    }
-    #[doc = "Flash Multi-Page Erase 32 pages"]
-    #[inline(always)]
-    pub fn is_flmper32(&self) -> bool {
-        *self == CMD_A::FLMPER32
-    }
-    #[doc = "EEPROM Write"]
-    #[inline(always)]
-    pub fn is_eewr(&self) -> bool {
-        *self == CMD_A::EEWR
-    }
-    #[doc = "EEPROM Erase and Write"]
-    #[inline(always)]
-    pub fn is_eeerwr(&self) -> bool {
-        *self == CMD_A::EEERWR
-    }
-    #[doc = "EEPROM Byte Erase"]
-    #[inline(always)]
-    pub fn is_eeber(&self) -> bool {
-        *self == CMD_A::EEBER
-    }
-    #[doc = "EEPROM Multi-Byte Erase 2 bytes"]
-    #[inline(always)]
-    pub fn is_eember2(&self) -> bool {
-        *self == CMD_A::EEMBER2
-    }
-    #[doc = "EEPROM Multi-Byte Erase 4 bytes"]
-    #[inline(always)]
-    pub fn is_eember4(&self) -> bool {
-        *self == CMD_A::EEMBER4
-    }
-    #[doc = "EEPROM Multi-Byte Erase 8 bytes"]
-    #[inline(always)]
-    pub fn is_eember8(&self) -> bool {
-        *self == CMD_A::EEMBER8
-    }
-    #[doc = "EEPROM Multi-Byte Erase 16 bytes"]
-    #[inline(always)]
-    pub fn is_eember16(&self) -> bool {
-        *self == CMD_A::EEMBER16
-    }
-    #[doc = "EEPROM Multi-Byte Erase 32 bytes"]
-    #[inline(always)]
-    pub fn is_eember32(&self) -> bool {
-        *self == CMD_A::EEMBER32
-    }
-    #[doc = "Chip Erase Command"]
+    #[doc = "Chip erase"]
     #[inline(always)]
     pub fn is_cher(&self) -> bool {
         *self == CMD_A::CHER
     }
-    #[doc = "EEPROM Erase Command"]
+    #[doc = "EEPROM erase"]
     #[inline(always)]
-    pub fn is_eecher(&self) -> bool {
-        *self == CMD_A::EECHER
+    pub fn is_eeer(&self) -> bool {
+        *self == CMD_A::EEER
+    }
+    #[doc = "Write fuse (PDI only)"]
+    #[inline(always)]
+    pub fn is_wfu(&self) -> bool {
+        *self == CMD_A::WFU
     }
 }
 #[doc = "Field `CMD` writer - Command"]
@@ -186,100 +98,45 @@ where
     REG: crate::Writable + crate::RegisterSpec,
     REG::Ux: From<u8>,
 {
-    #[doc = "No Command"]
+    #[doc = "No command"]
     #[inline(always)]
     pub fn none(self) -> &'a mut crate::W<REG> {
         self.variant(CMD_A::NONE)
     }
-    #[doc = "No Operation"]
+    #[doc = "Write page"]
     #[inline(always)]
-    pub fn noop(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::NOOP)
+    pub fn wp(self) -> &'a mut crate::W<REG> {
+        self.variant(CMD_A::WP)
     }
-    #[doc = "Flash Write"]
+    #[doc = "Erase page"]
     #[inline(always)]
-    pub fn flwr(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLWR)
+    pub fn er(self) -> &'a mut crate::W<REG> {
+        self.variant(CMD_A::ER)
     }
-    #[doc = "Flash Page Erase"]
+    #[doc = "Erase and write page"]
     #[inline(always)]
-    pub fn flper(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLPER)
+    pub fn erwp(self) -> &'a mut crate::W<REG> {
+        self.variant(CMD_A::ERWP)
     }
-    #[doc = "Flash Multi-Page Erase 2 pages"]
+    #[doc = "Page buffer clear"]
     #[inline(always)]
-    pub fn flmper2(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLMPER2)
+    pub fn pbc(self) -> &'a mut crate::W<REG> {
+        self.variant(CMD_A::PBC)
     }
-    #[doc = "Flash Multi-Page Erase 4 pages"]
-    #[inline(always)]
-    pub fn flmper4(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLMPER4)
-    }
-    #[doc = "Flash Multi-Page Erase 8 pages"]
-    #[inline(always)]
-    pub fn flmper8(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLMPER8)
-    }
-    #[doc = "Flash Multi-Page Erase 16 pages"]
-    #[inline(always)]
-    pub fn flmper16(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLMPER16)
-    }
-    #[doc = "Flash Multi-Page Erase 32 pages"]
-    #[inline(always)]
-    pub fn flmper32(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::FLMPER32)
-    }
-    #[doc = "EEPROM Write"]
-    #[inline(always)]
-    pub fn eewr(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEWR)
-    }
-    #[doc = "EEPROM Erase and Write"]
-    #[inline(always)]
-    pub fn eeerwr(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEERWR)
-    }
-    #[doc = "EEPROM Byte Erase"]
-    #[inline(always)]
-    pub fn eeber(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEBER)
-    }
-    #[doc = "EEPROM Multi-Byte Erase 2 bytes"]
-    #[inline(always)]
-    pub fn eember2(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEMBER2)
-    }
-    #[doc = "EEPROM Multi-Byte Erase 4 bytes"]
-    #[inline(always)]
-    pub fn eember4(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEMBER4)
-    }
-    #[doc = "EEPROM Multi-Byte Erase 8 bytes"]
-    #[inline(always)]
-    pub fn eember8(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEMBER8)
-    }
-    #[doc = "EEPROM Multi-Byte Erase 16 bytes"]
-    #[inline(always)]
-    pub fn eember16(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEMBER16)
-    }
-    #[doc = "EEPROM Multi-Byte Erase 32 bytes"]
-    #[inline(always)]
-    pub fn eember32(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EEMBER32)
-    }
-    #[doc = "Chip Erase Command"]
+    #[doc = "Chip erase"]
     #[inline(always)]
     pub fn cher(self) -> &'a mut crate::W<REG> {
         self.variant(CMD_A::CHER)
     }
-    #[doc = "EEPROM Erase Command"]
+    #[doc = "EEPROM erase"]
     #[inline(always)]
-    pub fn eecher(self) -> &'a mut crate::W<REG> {
-        self.variant(CMD_A::EECHER)
+    pub fn eeer(self) -> &'a mut crate::W<REG> {
+        self.variant(CMD_A::EEER)
+    }
+    #[doc = "Write fuse (PDI only)"]
+    #[inline(always)]
+    pub fn wfu(self) -> &'a mut crate::W<REG> {
+        self.variant(CMD_A::WFU)
     }
 }
 impl R {

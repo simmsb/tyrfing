@@ -100,9 +100,58 @@ pub type MASTER_R = crate::BitReader;
 #[doc = "Field `MASTER` writer - Host Operation Enable"]
 pub type MASTER_W<'a, REG> = crate::BitWriter<'a, REG>;
 #[doc = "Field `DORD` reader - Data Order Setting"]
-pub type DORD_R = crate::BitReader;
+pub type DORD_R = crate::BitReader<DORD_A>;
+#[doc = "Data Order Setting\n\nValue on reset: 0"]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DORD_A {
+    #[doc = "0: Most significant byte first"]
+    MSB_FIRST = 0,
+    #[doc = "1: Least significant byte first"]
+    LSB_FIRST = 1,
+}
+impl From<DORD_A> for bool {
+    #[inline(always)]
+    fn from(variant: DORD_A) -> Self {
+        variant as u8 != 0
+    }
+}
+impl DORD_R {
+    #[doc = "Get enumerated values variant"]
+    #[inline(always)]
+    pub const fn variant(&self) -> DORD_A {
+        match self.bits {
+            false => DORD_A::MSB_FIRST,
+            true => DORD_A::LSB_FIRST,
+        }
+    }
+    #[doc = "Most significant byte first"]
+    #[inline(always)]
+    pub fn is_msb_first(&self) -> bool {
+        *self == DORD_A::MSB_FIRST
+    }
+    #[doc = "Least significant byte first"]
+    #[inline(always)]
+    pub fn is_lsb_first(&self) -> bool {
+        *self == DORD_A::LSB_FIRST
+    }
+}
 #[doc = "Field `DORD` writer - Data Order Setting"]
-pub type DORD_W<'a, REG> = crate::BitWriter<'a, REG>;
+pub type DORD_W<'a, REG> = crate::BitWriter<'a, REG, DORD_A>;
+impl<'a, REG> DORD_W<'a, REG>
+where
+    REG: crate::Writable + crate::RegisterSpec,
+{
+    #[doc = "Most significant byte first"]
+    #[inline(always)]
+    pub fn msb_first(self) -> &'a mut crate::W<REG> {
+        self.variant(DORD_A::MSB_FIRST)
+    }
+    #[doc = "Least significant byte first"]
+    #[inline(always)]
+    pub fn lsb_first(self) -> &'a mut crate::W<REG> {
+        self.variant(DORD_A::LSB_FIRST)
+    }
+}
 impl R {
     #[doc = "Bit 0 - Enable Module"]
     #[inline(always)]
